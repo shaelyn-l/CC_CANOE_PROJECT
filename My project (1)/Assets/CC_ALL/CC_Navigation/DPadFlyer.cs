@@ -59,6 +59,12 @@ public class DPadFlyer : MonoBehaviour
 
         Gamepad gamepad = Gamepad.current;
         if (gamepad == null) return;
+        // if (gamepad == null) 
+        // {
+        //     Debug.Log("No gamepad detected");
+        //     return;
+        // }
+        // Debug.Log("Left stick: " + gamepad.leftStick.ReadValue());
         
         // Left DPAD joystick is for pitch and yaw
         float horizontalInput= gamepad.rightStick.ReadValue().x; // = Input.GetAxis("Horizontal2");
