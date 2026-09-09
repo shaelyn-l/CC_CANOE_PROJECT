@@ -141,6 +141,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
+using UnityEngine.UI;
 
 public class PlaceableObjectController : MonoBehaviour
 {
@@ -164,6 +165,9 @@ public class PlaceableObjectController : MonoBehaviour
 
     [Tooltip("Gamepad button used to summon the currently-selected hotbar piece.")]
     public GamepadButton summonButton = GamepadButton.West;
+
+    [Tooltip("UI Image (on a Screen Space - Overlay canvas) that always shows the sprite of the piece currently selected in the hotbar, about to be summoned. Leave empty to skip this feature.")]
+    public Image hotbarPreviewImage;
 
     int _hotbarIndex = 0;
 
@@ -273,6 +277,26 @@ public class PlaceableObjectController : MonoBehaviour
             _selected = piece;
             _hotbarIndex = 0; // list just shrank; keep index valid
         }
+
+        UpdateHotbarPreview();
+    }
+
+    void UpdateHotbarPreview()
+    {
+        if (hotbarPreviewImage == null) return;
+
+        List<PlaceableMarkerLock> pending = PendingPieces();
+
+        if (pending.Count == 0)
+        {
+            hotbarPreviewImage.enabled = false;
+            return;
+        }
+
+        if (_hotbarIndex >= pending.Count) _hotbarIndex = 0;
+
+        hotbarPreviewImage.sprite = pending[_hotbarIndex].PreviewSprite;
+        hotbarPreviewImage.enabled = hotbarPreviewImage.sprite != null;
     }
 
     Vector3 ComputeSpawnPoint(PlaceableMarkerLock piece)

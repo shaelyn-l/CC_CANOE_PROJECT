@@ -168,6 +168,35 @@
    Summon().
 */
 
+/* PlaceableMarkerLock
+   Attach this to any GameObject that should be movable by the player and
+   snap-lock in place when its center aligns (in X/Y) with a designated
+   marker elsewhere in the scene.
+
+   - Assign "Target Marker" to the specific marker object THIS object should
+     pair with. Each movable object has its own independent marker, so
+     multiple movable/marker pairs can coexist in the same scene.
+   - Movement is restricted to world X/Y. Z is frozen the moment the object
+     is picked up (selected) and never changes.
+   - Once locked, the object stops responding to selection/movement entirely.
+
+   Hotbar support:
+   - If "Start Hidden" is checked, the object begins invisible and
+     un-clickable (renderer + collider disabled) - effectively "in the
+     player's inventory" - until PlaceableObjectController calls Summon().
+   - "Home Z" (captured automatically at Awake, before hiding) is this
+     piece's permanent, correct depth in the final puzzle image. Summoning
+     always places the piece at this depth, regardless of where the player
+     currently is, so each piece keeps the depth it was authored with.
+
+   Requires a Collider (so PlaceableObjectController's raycast can find it).
+   A Renderer is optional but enables the hover/selected/locked color cues.
+
+   This script does not read any input itself - PlaceableObjectController
+   drives it by calling SetHovered() / Select() / Deselect() / MoveTo() /
+   Summon().
+*/
+
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
@@ -203,6 +232,16 @@ public class PlaceableMarkerLock : MonoBehaviour
 
     /// <summary>Current position with Z frozen at whatever it was when last selected.</summary>
     public Vector3 FrozenPoint => new Vector3(transform.position.x, transform.position.y, _frozenZ);
+
+    /// <summary>This piece's existing world sprite, reused for the hotbar preview UI. Null if no SpriteRenderer is present.</summary>
+    public Sprite PreviewSprite
+    {
+        get
+        {
+            SpriteRenderer sr = GetComponentInChildren<SpriteRenderer>(true);
+            return sr != null ? sr.sprite : null;
+        }
+    }
 
     Renderer _renderer;
     Collider _collider;
