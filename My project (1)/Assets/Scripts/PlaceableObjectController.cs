@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
@@ -96,26 +95,27 @@ public class PlaceableObjectController : MonoBehaviour
     void HandleSelectClick()
     {
         Mouse mouse = Mouse.current;
-        if (mouse == null || !mouse.leftButton.wasPressedThisFrame) return;
-
-        // if something is selected but now deselecting
-        if (_selected != null)
+        if (mouse.leftButton.wasPressedThisFrame)
         {
-            _selected.Deselect();
-            _selected = null;
+            // if something is selected but now deselecting
+            if (_selected != null)
+            {
+                _selected.Deselect();
+                _selected = null;
+            }
+            // if an object is in hovered state and not locked, then can move to selected state
+            else if (_hovered != null && !_hovered.isLocked)
+            {
+                _selected = _hovered;
+                _selected.Select();
+            }
         }
-        // if an object is in hovered state and not locked, then can move to selected state
-        else if (_hovered != null && !_hovered.isLocked)
-        {
-            _selected = _hovered;
-            _selected.Select();
-        }
+        
     }
 
     void MoveSelected()
     {
         Mouse mouse = Mouse.current;
-        if (mouse == null) return;
 
         // mouse.delta: how far the mouse moved since last frame
         Vector2 delta = mouse.delta.ReadValue() * mouseSensitivity;
@@ -185,22 +185,16 @@ public class PlaceableObjectController : MonoBehaviour
         if (summonPressed && _selected == null)
         {
             PlaceableMarkerLock piece = pending[_hotbarIndex];
-            Vector3 spawnPoint = ComputeSpawnPoint(piece);
+
+            // compute spawn point of object 
+            Vector3 spawnPoint = headTransform.position + headTransform.forward * spawnDistance;
+            spawnPoint.z = piece.homeZ;
+
             piece.Summon(spawnPoint);
             _selected = piece;
-            _hotbarIndex = 0; // list just shrank; keep index valid
+            _hotbarIndex = 0;
         }
-
         UpdateHotbarPreview();
-    }
-
-    // spawn fixed distance in front of where player is currently looking 
-    // then snap the depth to correct z
-     Vector3 ComputeSpawnPoint(PlaceableMarkerLock piece)
-    {
-        Vector3 spawnPoint = headTransform.position + headTransform.forward * spawnDistance;
-        spawnPoint.z = piece.homeZ;
-        return spawnPoint;
     }
 
     void UpdateHotbarPreview()

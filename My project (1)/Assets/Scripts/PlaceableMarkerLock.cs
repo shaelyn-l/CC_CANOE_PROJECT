@@ -81,15 +81,9 @@ public class PlaceableMarkerLock : MonoBehaviour
         isHidden = false;
         isSummoned = true;
 
-        // if (pieceRenderer != null)
-        // {
         pieceRenderer.enabled = true;
-        // }
 
-        // if (pieceCollider != null)
-        // {
         pieceCollider.enabled = true;
-        // }
 
         Vector3 spawnPosition = worldPoint;
         spawnPosition.z = homeZ;
@@ -150,11 +144,6 @@ public class PlaceableMarkerLock : MonoBehaviour
 
     private void CheckForLock()
     {
-        // if (targetMarker == null)
-        // {
-        //     // No marker assigned yet, so there is nothing to lock onto.
-        //     return;
-        // }
 
         Vector2 piecePositionXY = new Vector2(transform.position.x, transform.position.y);
         Vector2 markerPositionXY = new Vector2(targetMarker.position.x, targetMarker.position.y);
@@ -192,28 +181,5 @@ public class PlaceableMarkerLock : MonoBehaviour
         {
             pieceRenderer.material.color = originalColor;
         }
-    }
-
-    // Returns this piece's current position, using its correct permanent
-    // depth (homeZ) for Z.
-    // public Vector3 GetFrozenPoint()
-    // {
-    //     Vector3 frozenPoint = new Vector3(transform.position.x, transform.position.y, homeZ);
-    //     return frozenPoint;
-    // }
-
-    // Returns the sprite this piece already uses in the world, so the
-    // hotbar preview UI can reuse the same image instead of needing a
-    // separate icon assigned per piece.
-    public Sprite GetPreviewSprite()
-    {
-        SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>(true);
-
-        if (spriteRenderer == null)
-        {
-            return null;
-        }
-
-        return spriteRenderer.sprite;
     }
 }
