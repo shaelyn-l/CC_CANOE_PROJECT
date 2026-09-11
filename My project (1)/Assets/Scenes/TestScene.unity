@@ -592,7 +592,7 @@ GameObject:
   - component: {fileID: 483506160}
   - component: {fileID: 483506159}
   - component: {fileID: 483506158}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: LilyPadFlower
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -612,12 +612,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlaceableMarkerLock
   targetMarker: {fileID: 1519800679}
-  lockThreshold: 0.25
   startHidden: 1
   useColorFeedback: 1
   hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   selectedColor: {r: 0, g: 1, b: 0, a: 1}
   lockedColor: {r: 0, g: 1, b: 1, a: 1}
+  isSelected: 0
+  isLocked: 0
+  isHovered: 0
+  isHidden: 0
+  isSummoned: 0
+  lockThreshold: 0.25
+  homeZ: 0
 --- !u!65 &483506159
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -880,7 +886,7 @@ GameObject:
   - component: {fileID: 797833180}
   - component: {fileID: 797833179}
   - component: {fileID: 797833178}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Duck
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -900,12 +906,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlaceableMarkerLock
   targetMarker: {fileID: 1183465494}
-  lockThreshold: 0.25
   startHidden: 1
   useColorFeedback: 1
   hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   selectedColor: {r: 0, g: 1, b: 0, a: 1}
   lockedColor: {r: 0, g: 1, b: 1, a: 1}
+  isSelected: 0
+  isLocked: 0
+  isHovered: 0
+  isHidden: 0
+  isSummoned: 0
+  lockThreshold: 0.25
+  homeZ: 0
 --- !u!65 &797833179
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1214,7 +1226,7 @@ GameObject:
   - component: {fileID: 1340837809}
   - component: {fileID: 1340837808}
   - component: {fileID: 1340837807}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Frog
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1234,12 +1246,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlaceableMarkerLock
   targetMarker: {fileID: 117003301}
-  lockThreshold: 0.25
   startHidden: 1
   useColorFeedback: 1
   hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   selectedColor: {r: 0, g: 1, b: 0, a: 1}
   lockedColor: {r: 0, g: 1, b: 1, a: 1}
+  isSelected: 0
+  isLocked: 0
+  isHovered: 0
+  isHidden: 0
+  isSummoned: 0
+  lockThreshold: 0.25
+  homeZ: 0
 --- !u!65 &1340837808
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1440,7 +1458,7 @@ GameObject:
   - component: {fileID: 1705232655}
   - component: {fileID: 1705232654}
   - component: {fileID: 1705232653}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: LilyPad
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1460,12 +1478,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlaceableMarkerLock
   targetMarker: {fileID: 360459695}
-  lockThreshold: 0.25
   startHidden: 1
   useColorFeedback: 1
   hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   selectedColor: {r: 0, g: 1, b: 0, a: 1}
   lockedColor: {r: 0, g: 1, b: 1, a: 1}
+  isSelected: 0
+  isLocked: 0
+  isHovered: 0
+  isHidden: 0
+  isSummoned: 0
+  lockThreshold: 0.25
+  homeZ: 0
 --- !u!65 &1705232654
 BoxCollider:
   m_ObjectHideFlags: 0

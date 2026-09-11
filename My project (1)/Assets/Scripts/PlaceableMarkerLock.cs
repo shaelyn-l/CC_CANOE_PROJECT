@@ -1,371 +1,219 @@
-// /* PlaceableMarkerLock
-//    Attach this to any GameObject that should be movable by the player and
-//    snap-lock in place when its center aligns (in X/Y) with a designated
-//    marker elsewhere in the scene.
-
-//    - Assign "Target Marker" to the specific marker object THIS object should
-//      pair with. Each movable object has its own independent marker, so
-//      multiple movable/marker pairs can coexist in the same scene.
-//    - Movement is restricted to world X/Y. Z is frozen the moment the object
-//      is picked up (selected) and never changes.
-//    - Once locked, the object stops responding to selection/movement entirely.
-
-//    Requires a Collider (so PlaceableObjectController's raycast can find it).
-//    A Renderer is optional but enables the hover/selected/locked color cues.
-
-//    This script does not read any input itself - PlaceableObjectController
-//    drives it by calling SetHovered() / Select() / Deselect() / MoveTo().
-// */
-
-// using UnityEngine;
-
-// [RequireComponent(typeof(Collider))]
-// public class PlaceableMarkerLock : MonoBehaviour
-// {
-//     [Header("Pairing")]
-//     [Tooltip("The marker in the scene this object should snap to when its center aligns with it.")]
-//     public Transform targetMarker;
-
-//     [Header("Locking")]
-//     [Tooltip("How close (in world X/Y) the object's center must get to the marker before it snaps and locks.")]
-//     public float lockThreshold = 0.25f;
-
-//     [Header("Hover / Selected / Locked Feedback (optional)")]
-//     [Tooltip("If true, tints this object's material to show hover/selected/locked state.")]
-//     public bool useColorFeedback = true;
-//     public Color hoverColor = Color.yellow;
-//     public Color selectedColor = Color.green;
-//     public Color lockedColor = Color.cyan;
-
-//     public bool IsSelected { get; private set; }
-//     public bool IsLocked { get; private set; }
-//     public bool IsHovered { get; private set; }
-
-//     /// <summary>Current position with Z frozen at whatever it was when last selected.</summary>
-//     public Vector3 FrozenPoint => new Vector3(transform.position.x, transform.position.y, _frozenZ);
-
-//     Renderer _renderer;
-//     Color _originalColor;
-//     float _frozenZ;
-
-//     void Awake()
-//     {
-//         _renderer = GetComponentInChildren<Renderer>();
-//         if (_renderer != null)
-//         {
-//             // Instance the material so we don't tint every object sharing it.
-//             _originalColor = _renderer.material.color;
-//         }
-//         _frozenZ = transform.position.z;
-//     }
-
-//     /// <summary>Called by PlaceableObjectController every frame with the current crosshair hover state.</summary>
-//     public void SetHovered(bool hovered)
-//     {
-//         if (IsLocked) return;
-//         IsHovered = hovered;
-//         UpdateVisual();
-//     }
-
-//     /// <summary>Called by PlaceableObjectController when this object is picked up.</summary>
-//     public void Select()
-//     {
-//         if (IsLocked) return;
-//         IsSelected = true;
-//         _frozenZ = transform.position.z; // lock in whatever Z it currently has
-//         UpdateVisual();
-//     }
-
-//     /// <summary>Called by PlaceableObjectController when the player clicks again to drop it.</summary>
-//     public void Deselect()
-//     {
-//         IsSelected = false;
-//         UpdateVisual();
-//     }
-
-//     /// <summary>Called by PlaceableObjectController every frame with a world-space point to move toward (X/Y used, Z ignored).</summary>
-//     public void MoveTo(Vector3 worldPoint)
-//     {
-//         if (!IsSelected || IsLocked) return;
-
-//         Vector3 pos = transform.position;
-//         pos.x = worldPoint.x;
-//         pos.y = worldPoint.y;
-//         pos.z = _frozenZ;
-//         transform.position = pos;
-
-//         CheckForLock();
-//     }
-
-//     void CheckForLock()
-//     {
-//         if (targetMarker == null) return;
-
-//         Vector2 a = new Vector2(transform.position.x, transform.position.y);
-//         Vector2 b = new Vector2(targetMarker.position.x, targetMarker.position.y);
-
-//         if (Vector2.Distance(a, b) <= lockThreshold)
-//         {
-//             Vector3 pos = transform.position;
-//             pos.x = targetMarker.position.x;
-//             pos.y = targetMarker.position.y;
-//             transform.position = pos;
-
-//             IsLocked = true;
-//             IsSelected = false;
-//             IsHovered = false;
-//             UpdateVisual();
-//         }
-//     }
-
-//     void UpdateVisual()
-//     {
-//         if (!useColorFeedback || _renderer == null) return;
-
-//         if (IsLocked) _renderer.material.color = lockedColor;
-//         else if (IsSelected) _renderer.material.color = selectedColor;
-//         else if (IsHovered) _renderer.material.color = hoverColor;
-//         else _renderer.material.color = _originalColor;
-//     }
-
-// #if UNITY_EDITOR
-//     void OnDrawGizmosSelected()
-//     {
-//         if (targetMarker == null) return;
-//         Gizmos.color = Color.magenta;
-//         Gizmos.DrawWireSphere(targetMarker.position, lockThreshold);
-//         Gizmos.DrawLine(transform.position, targetMarker.position);
-//     }
-// #endif
-// }
-
-/* PlaceableMarkerLock
-   Attach this to any GameObject that should be movable by the player and
-   snap-lock in place when its center aligns (in X/Y) with a designated
-   marker elsewhere in the scene.
-
-   - Assign "Target Marker" to the specific marker object THIS object should
-     pair with. Each movable object has its own independent marker, so
-     multiple movable/marker pairs can coexist in the same scene.
-   - Movement is restricted to world X/Y. Z is frozen the moment the object
-     is picked up (selected) and never changes.
-   - Once locked, the object stops responding to selection/movement entirely.
-
-   Hotbar support:
-   - If "Start Hidden" is checked, the object begins invisible and
-     un-clickable (renderer + collider disabled) - effectively "in the
-     player's inventory" - until PlaceableObjectController calls Summon().
-   - "Home Z" (captured automatically at Awake, before hiding) is this
-     piece's permanent, correct depth in the final puzzle image. Summoning
-     always places the piece at this depth, regardless of where the player
-     currently is, so each piece keeps the depth it was authored with.
-
-   Requires a Collider (so PlaceableObjectController's raycast can find it).
-   A Renderer is optional but enables the hover/selected/locked color cues.
-
-   This script does not read any input itself - PlaceableObjectController
-   drives it by calling SetHovered() / Select() / Deselect() / MoveTo() /
-   Summon().
-*/
-
-/* PlaceableMarkerLock
-   Attach this to any GameObject that should be movable by the player and
-   snap-lock in place when its center aligns (in X/Y) with a designated
-   marker elsewhere in the scene.
-
-   - Assign "Target Marker" to the specific marker object THIS object should
-     pair with. Each movable object has its own independent marker, so
-     multiple movable/marker pairs can coexist in the same scene.
-   - Movement is restricted to world X/Y. Z is frozen the moment the object
-     is picked up (selected) and never changes.
-   - Once locked, the object stops responding to selection/movement entirely.
-
-   Hotbar support:
-   - If "Start Hidden" is checked, the object begins invisible and
-     un-clickable (renderer + collider disabled) - effectively "in the
-     player's inventory" - until PlaceableObjectController calls Summon().
-   - "Home Z" (captured automatically at Awake, before hiding) is this
-     piece's permanent, correct depth in the final puzzle image. Summoning
-     always places the piece at this depth, regardless of where the player
-     currently is, so each piece keeps the depth it was authored with.
-
-   Requires a Collider (so PlaceableObjectController's raycast can find it).
-   A Renderer is optional but enables the hover/selected/locked color cues.
-
-   This script does not read any input itself - PlaceableObjectController
-   drives it by calling SetHovered() / Select() / Deselect() / MoveTo() /
-   Summon().
-*/
-
 using UnityEngine;
 
-[RequireComponent(typeof(Collider))]
 public class PlaceableMarkerLock : MonoBehaviour
 {
+    // the markerthe piece should snap to
     [Header("Pairing")]
-    [Tooltip("The marker in the scene this object should snap to when its center aligns with it.")]
     public Transform targetMarker;
 
-    [Header("Locking")]
-    [Tooltip("How close (in world X/Y) the object's center must get to the marker before it snaps and locks.")]
-    public float lockThreshold = 0.25f;
-
+    // true -> starts hidden until summoned from the hotbar
     [Header("Hotbar")]
-    [Tooltip("If true, this piece starts invisible/unclickable until summoned from the hotbar.")]
     public bool startHidden = true;
 
-    [Header("Hover / Selected / Locked Feedback (optional)")]
-    [Tooltip("If true, tints this object's material to show hover/selected/locked state.")]
+    // tue -> color changes based on state
+    [Header("Interaction Feedback Colors")]
     public bool useColorFeedback = true;
     public Color hoverColor = Color.yellow;
     public Color selectedColor = Color.green;
     public Color lockedColor = Color.cyan;
 
-    public bool IsSelected { get; private set; }
-    public bool IsLocked { get; private set; }
-    public bool IsHovered { get; private set; }
-    public bool IsHidden { get; private set; }
-    public bool IsSummoned { get; private set; }
+    public bool isSelected = false;
+    public bool isLocked = false;
+    public bool isHovered = false;
+    public bool isHidden = false;
+    public bool isSummoned = false;
 
-    /// <summary>This piece's permanent, correct depth in the finished puzzle image.</summary>
-    public float HomeZ { get; private set; }
+    // how close in X/Y the piece's center needs to get to marker before it snaps into place
+    public float lockThreshold = 0.25f;
 
-    /// <summary>Current position with Z frozen at whatever it was when last selected.</summary>
-    public Vector3 FrozenPoint => new Vector3(transform.position.x, transform.position.y, _frozenZ);
+    // permanent depth in the finished puzzle
+    //captured before the piece is hidden so summoning later puts it back at the right depth
+    public float homeZ;
 
-    /// <summary>This piece's existing world sprite, reused for the hotbar preview UI. Null if no SpriteRenderer is present.</summary>
-    public Sprite PreviewSprite
-    {
-        get
-        {
-            SpriteRenderer sr = GetComponentInChildren<SpriteRenderer>(true);
-            return sr != null ? sr.sprite : null;
-        }
-    }
-
-    Renderer _renderer;
-    Collider _collider;
-    Color _originalColor;
-    float _frozenZ;
+    private Renderer pieceRenderer;
+    private Collider pieceCollider;
+    private Color originalColor;
 
     void Awake()
     {
-        _renderer = GetComponentInChildren<Renderer>();
-        _collider = GetComponent<Collider>();
+        // get references to the renderer and collider of gameobject
+        pieceRenderer = GetComponent<Renderer>();
+        pieceCollider = GetComponent<Collider>();
 
-        if (_renderer != null)
+        originalColor = pieceRenderer.material.color;
+
+        // Remember where this piece was placed in the editor - that is its
+        // correct final depth for the puzzle, and it should never change.
+        homeZ = transform.position.z;
+
+        if (startHidden)
         {
-            // Instance the material so we don't tint every object sharing it.
-            _originalColor = _renderer.material.color;
+            HideImmediate();
+        }
+    }
+
+    private void HideImmediate()
+    {
+        isHidden = true;
+
+        if (pieceRenderer != null)
+        {
+            pieceRenderer.enabled = false;
         }
 
-        // Capture the authored depth BEFORE any hiding happens.
-        HomeZ = transform.position.z;
-        _frozenZ = HomeZ;
-
-        if (startHidden) HideImmediate();
+        if (pieceCollider != null)
+        {
+            pieceCollider.enabled = false;
+        }
     }
 
-    void HideImmediate()
-    {
-        IsHidden = true;
-        if (_renderer != null) _renderer.enabled = false;
-        if (_collider != null) _collider.enabled = false;
-    }
-
-    /// <summary>Called by PlaceableObjectController to bring this piece out of the hotbar at a world point (X/Y used; Z snaps to HomeZ). Immediately selects it.</summary>
+    // called by PlaceableObjectController when the player summons object out of hotbar
+    // worldPoint: where the player is looking (X, Y)
     public void Summon(Vector3 worldPoint)
     {
-        if (IsLocked) return;
+        // if piece is already locked, cannot be summoned again
+        // CHECK THIS LOGIC
+        if (isLocked)
+        {
+            return;
+        }
 
-        IsHidden = false;
-        IsSummoned = true;
-        if (_renderer != null) _renderer.enabled = true;
-        if (_collider != null) _collider.enabled = true;
+        isHidden = false;
+        isSummoned = true;
 
-        Vector3 pos = worldPoint;
-        pos.z = HomeZ;
-        transform.position = pos;
+        // if (pieceRenderer != null)
+        // {
+        pieceRenderer.enabled = true;
+        // }
 
+        // if (pieceCollider != null)
+        // {
+        pieceCollider.enabled = true;
+        // }
+
+        Vector3 spawnPosition = worldPoint;
+        spawnPosition.z = homeZ;
+        transform.position = spawnPosition;
+
+        // piece automatically picked up
         Select();
     }
 
-    /// <summary>Called by PlaceableObjectController every frame with the current crosshair hover state.</summary>
+    // called by PlaceableObjectController know whether the crosshair is pointing at it
     public void SetHovered(bool hovered)
     {
-        if (IsLocked || IsHidden) return;
-        IsHovered = hovered;
+        if (isLocked || isHidden)
+        {
+            return;
+        }
+
+        isHovered = hovered;
         UpdateVisual();
     }
 
-    /// <summary>Called by PlaceableObjectController when this object is picked up.</summary>
+    //called by PlaceableObjectController when the player picks the piece up
     public void Select()
     {
-        if (IsLocked || IsHidden) return;
-        IsSelected = true;
-        _frozenZ = transform.position.z; // lock in whatever Z it currently has
+        if (isLocked || isHidden)
+        {
+            return;
+        }
+
+        isSelected = true;
+
         UpdateVisual();
     }
 
-    /// <summary>Called by PlaceableObjectController when the player clicks again to drop it.</summary>
+    // called by PlaceableObjectController when the player puts this piece back without locking it
     public void Deselect()
     {
-        IsSelected = false;
+        isSelected = false;
         UpdateVisual();
     }
 
-    /// <summary>Called by PlaceableObjectController every frame with a world-space point to move toward (X/Y used, Z ignored).</summary>
+    // called every frame by PlaceableObjectController while this piece is selected with a new position to move to
     public void MoveTo(Vector3 worldPoint)
     {
-        if (!IsSelected || IsLocked) return;
+        if (!isSelected || isLocked)
+        {
+            return;
+        }
 
-        Vector3 pos = transform.position;
-        pos.x = worldPoint.x;
-        pos.y = worldPoint.y;
-        pos.z = _frozenZ;
-        transform.position = pos;
+        Vector3 newPosition = transform.position;
+        newPosition.x = worldPoint.x;
+        newPosition.y = worldPoint.y;
+        newPosition.z = homeZ;
+        transform.position = newPosition;
 
         CheckForLock();
     }
 
-    void CheckForLock()
+    private void CheckForLock()
     {
-        if (targetMarker == null) return;
+        // if (targetMarker == null)
+        // {
+        //     // No marker assigned yet, so there is nothing to lock onto.
+        //     return;
+        // }
 
-        Vector2 a = new Vector2(transform.position.x, transform.position.y);
-        Vector2 b = new Vector2(targetMarker.position.x, targetMarker.position.y);
+        Vector2 piecePositionXY = new Vector2(transform.position.x, transform.position.y);
+        Vector2 markerPositionXY = new Vector2(targetMarker.position.x, targetMarker.position.y);
+        float distanceToMarker = Vector2.Distance(piecePositionXY, markerPositionXY);
 
-        if (Vector2.Distance(a, b) <= lockThreshold)
+        if (distanceToMarker <= lockThreshold)
         {
-            Vector3 pos = transform.position;
-            pos.x = targetMarker.position.x;
-            pos.y = targetMarker.position.y;
-            transform.position = pos;
+            Vector3 lockedPosition = transform.position;
+            lockedPosition.x = targetMarker.position.x;
+            lockedPosition.y = targetMarker.position.y;
+            transform.position = lockedPosition;
 
-            IsLocked = true;
-            IsSelected = false;
-            IsHovered = false;
+            isLocked = true;
+            isSelected = false;
+            isHovered = false;
             UpdateVisual();
         }
     }
 
-    void UpdateVisual()
+    private void UpdateVisual()
     {
-        if (!useColorFeedback || _renderer == null) return;
-
-        if (IsLocked) _renderer.material.color = lockedColor;
-        else if (IsSelected) _renderer.material.color = selectedColor;
-        else if (IsHovered) _renderer.material.color = hoverColor;
-        else _renderer.material.color = _originalColor;
+        if (isLocked)
+        {
+            pieceRenderer.material.color = lockedColor;
+        }
+        else if (isSelected)
+        {
+            pieceRenderer.material.color = selectedColor;
+        }
+        else if (isHovered)
+        {
+            pieceRenderer.material.color = hoverColor;
+        }
+        else
+        {
+            pieceRenderer.material.color = originalColor;
+        }
     }
 
-#if UNITY_EDITOR
-    void OnDrawGizmosSelected()
+    // Returns this piece's current position, using its correct permanent
+    // depth (homeZ) for Z.
+    // public Vector3 GetFrozenPoint()
+    // {
+    //     Vector3 frozenPoint = new Vector3(transform.position.x, transform.position.y, homeZ);
+    //     return frozenPoint;
+    // }
+
+    // Returns the sprite this piece already uses in the world, so the
+    // hotbar preview UI can reuse the same image instead of needing a
+    // separate icon assigned per piece.
+    public Sprite GetPreviewSprite()
     {
-        if (targetMarker == null) return;
-        Gizmos.color = Color.magenta;
-        Gizmos.DrawWireSphere(targetMarker.position, lockThreshold);
-        Gizmos.DrawLine(transform.position, targetMarker.position);
+        SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>(true);
+
+        if (spriteRenderer == null)
+        {
+            return null;
+        }
+
+        return spriteRenderer.sprite;
     }
-#endif
 }

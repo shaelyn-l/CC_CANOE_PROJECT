@@ -1,141 +1,3 @@
-// /* PlaceableObjectController
-//    Attach this ONCE anywhere in the scene (e.g. an empty GameObject).
-
-//    Crosshair-based control scheme (works correctly with CC_CANOE's stereo
-//    split-screen rendering, since it never relies on mouse screen position
-//    mapping to a camera's viewport):
-
-//    - Every frame, casts a ray from "Head Transform" (assign CC_HEAD) along
-//      its forward direction to determine which PlaceableMarkerLock, if any,
-//      is directly in front of the viewer.
-//    - Left-click toggles select/deselect on whatever is currently hovered:
-//        * Nothing selected + something hovered -> select it.
-//        * Something selected -> deselect it (regardless of current hover).
-//    - While something is selected, the mouse's raw movement delta (not its
-//      absolute screen position) is used to nudge the object's X/Y each frame.
-//      This sidesteps the stereo canvas entirely and will translate directly
-//      to a gamepad stick later (same delta-based movement pattern).
-//    - If that movement brings the object within its own lockThreshold of its
-//      paired marker, PlaceableMarkerLock snaps and locks it automatically.
-
-//    Requires the new Input System package (Mouse.current). Movable objects
-//    need a Collider so the crosshair raycast can find them.
-// */
-
-// using UnityEngine;
-// using UnityEngine.InputSystem;
-
-// public class PlaceableObjectController : MonoBehaviour
-// {
-//     [Header("Crosshair Raycast")]
-//     [Tooltip("Transform whose position and forward direction define the crosshair ray. Assign CC_HEAD here.")]
-//     public Transform headTransform;
-
-//     [Tooltip("Max raycast distance for selecting an object.")]
-//     public float maxRaycastDistance = 100f;
-
-//     [Tooltip("Layers considered when raycasting to select an object.")]
-//     public LayerMask placeableLayers = ~0;
-
-//     [Header("Movement")]
-//     [Tooltip("How far the object moves per pixel of raw mouse movement.")]
-//     public float mouseSensitivity = 0.01f;
-
-//     PlaceableMarkerLock _hovered;
-//     PlaceableMarkerLock _selected;
-
-//     void Update()
-//     {
-//         Mouse mouse = Mouse.current;
-//         if (mouse == null || headTransform == null) return;
-
-//         UpdateHover();
-//         HandleSelectClick(mouse);
-
-//         if (_selected != null)
-//         {
-//             MoveSelected(mouse);
-//         }
-//     }
-
-//     void UpdateHover()
-//     {
-//         PlaceableMarkerLock newHover = null;
-
-//         Ray ray = new Ray(headTransform.position, headTransform.forward);
-//         if (Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, placeableLayers, QueryTriggerInteraction.Collide))
-//         {
-//             newHover = hit.collider.GetComponentInParent<PlaceableMarkerLock>();
-//         }
-
-//         if (newHover != _hovered)
-//         {
-//             if (_hovered != null) _hovered.SetHovered(false);
-//             _hovered = newHover;
-//             if (_hovered != null) _hovered.SetHovered(true);
-//         }
-//     }
-
-//     void HandleSelectClick(Mouse mouse)
-//     {
-//         if (!mouse.leftButton.wasPressedThisFrame) return;
-
-//         if (_selected != null)
-//         {
-//             _selected.Deselect();
-//             _selected = null;
-//         }
-//         else if (_hovered != null && !_hovered.IsLocked)
-//         {
-//             _selected = _hovered;
-//             _selected.Select();
-//         }
-//     }
-
-//     void MoveSelected(Mouse mouse)
-//     {
-//         Vector2 delta = mouse.delta.ReadValue() * mouseSensitivity;
-//         Vector3 target = _selected.transform.position + new Vector3(delta.x, delta.y, 0f);
-//         _selected.MoveTo(target);
-
-//         // If that move caused it to snap and lock this frame, release our reference.
-//         if (_selected.IsLocked) _selected = null;
-//     }
-// }
-
-/* PlaceableObjectController
-   Attach this ONCE anywhere in the scene (e.g. an empty GameObject).
-
-   Crosshair-based control scheme (works correctly with CC_CANOE's stereo
-   split-screen rendering, since it never relies on mouse screen position
-   mapping to a camera's viewport):
-
-   - Every frame, casts a ray from "Head Transform" (assign CC_HEAD) along
-     its forward direction to determine which PlaceableMarkerLock, if any,
-     is directly in front of the viewer.
-   - Left-click toggles select/deselect on whatever is currently hovered:
-       * Nothing selected + something hovered -> select it.
-       * Something selected -> deselect it (regardless of current hover).
-   - While something is selected, the mouse's raw movement delta (not its
-     absolute screen position) is used to nudge the object's X/Y each frame.
-   - If that movement brings the object within its own lockThreshold of its
-     paired marker, PlaceableMarkerLock snaps and locks it automatically.
-
-   Hotbar:
-   - Assign every hideable puzzle piece to "Hotbar Pieces".
-   - Cycle through not-yet-summoned pieces with D-Pad Left/Right (gamepad)
-     or [ and ] (keyboard).
-   - Summon the currently-selected hotbar piece with the West/X gamepad
-     button, or Enter/Space on keyboard. It spawns wherever the player is
-     currently looking, at that piece's own correct fixed depth, and is
-     immediately picked up.
-   - Only one piece can be held at a time; summon is ignored while already
-     carrying something.
-
-   Requires the new Input System package. Movable objects need a Collider
-   so the crosshair raycast can find them.
-*/
-
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -145,28 +7,28 @@ using UnityEngine.UI;
 
 public class PlaceableObjectController : MonoBehaviour
 {
+    // whose transform position define the crosshair ray
     [Header("Crosshair Raycast")]
-    [Tooltip("Transform whose position and forward direction define the crosshair ray. Assign CC_HEAD here.")]
     public Transform headTransform;
 
-    [Tooltip("Max raycast distance for selecting an object.")]
+    // max raycast distance for selecting
     public float maxRaycastDistance = 100f;
 
-    [Tooltip("Layers considered when raycasting to select an object.")]
-    public LayerMask placeableLayers = ~0;
+    // layers considered when raycasting to select an object
+    public LayerMask placeableLayers = LayerMask.GetMask("PuzzlePiece");    
 
+    // how far object moves per pixel of movement
     [Header("Movement")]
-    [Tooltip("How far the object moves per pixel of raw mouse movement.")]
     public float mouseSensitivity = 0.01f;
 
     [Header("Hotbar")]
-    [Tooltip("All puzzle pieces that start hidden and can be summoned one at a time.")]
+    // puzzle pieces to summon via hotbar
     public List<PlaceableMarkerLock> hotbarPieces = new List<PlaceableMarkerLock>();
 
-    [Tooltip("Gamepad button used to summon the currently-selected hotbar piece.")]
+    // gamepad button used to summon the currently-selected hotbar piece
     public GamepadButton summonButton = GamepadButton.West;
 
-    [Tooltip("UI Image (on a Screen Space - Overlay canvas) that always shows the sprite of the piece currently selected in the hotbar, about to be summoned. Leave empty to skip this feature.")]
+    // image that shows the sprite of the piece currently selected in the hotbar
     public Image hotbarPreviewImage;
 
     int _hotbarIndex = 0;
@@ -176,7 +38,7 @@ public class PlaceableObjectController : MonoBehaviour
 
     void Update()
     {
-        if (headTransform == null) return;
+        // if (headTransform == null) return;
 
         UpdateHover();
         HandleSelectClick();
@@ -188,35 +50,61 @@ public class PlaceableObjectController : MonoBehaviour
         }
     }
 
+    // interact with SetHovered from PlacableMarkerLock
     void UpdateHover()
     {
         PlaceableMarkerLock newHover = null;
 
+        // building the ray to represent where user is looking
         Ray ray = new Ray(headTransform.position, headTransform.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, placeableLayers, QueryTriggerInteraction.Collide))
+
+        if (Physics.Raycast(ray, out RaycastHit hit, maxRaycastDistance, placeableLayers))
         {
-            newHover = hit.collider.GetComponentInParent<PlaceableMarkerLock>();
+            newHover = hit.collider.GetComponent<PlaceableMarkerLock>();
         }
 
+        // if what raycast found was different than what was looked at last frame
         if (newHover != _hovered)
         {
-            if (_hovered != null) _hovered.SetHovered(false);
-            _hovered = newHover;
-            if (_hovered != null) _hovered.SetHovered(true);
+            bool somethingHoveredBefore = _hovered != null;
+            bool somethingHoveredNow = newHover != null;
+
+             // was looking and one piece but now looking at another piece
+            if (somethingHoveredBefore && somethingHoveredNow)
+            {
+                _hovered.SetHovered(false);
+                _hovered = newHover;
+                _hovered.SetHovered(true);
+            }
+            // was looking at a piece and now looking at nothing
+            else if (somethingHoveredBefore && !somethingHoveredNow)
+            {
+                _hovered.SetHovered(false);
+                _hovered = newHover;
+            }
+            // not looking at anything before but now looking at something
+            else if (!somethingHoveredBefore && somethingHoveredNow)
+            {
+                _hovered = newHover;
+                _hovered.SetHovered(true);
+            }
         }
     }
 
+    // 
     void HandleSelectClick()
     {
         Mouse mouse = Mouse.current;
         if (mouse == null || !mouse.leftButton.wasPressedThisFrame) return;
 
+        // if something is selected but now deselecting
         if (_selected != null)
         {
             _selected.Deselect();
             _selected = null;
         }
-        else if (_hovered != null && !_hovered.IsLocked)
+        // if an object is in hovered state and not locked, then can move to selected state
+        else if (_hovered != null && !_hovered.isLocked)
         {
             _selected = _hovered;
             _selected.Select();
@@ -228,17 +116,35 @@ public class PlaceableObjectController : MonoBehaviour
         Mouse mouse = Mouse.current;
         if (mouse == null) return;
 
+        // mouse.delta: how far the mouse moved since last frame
         Vector2 delta = mouse.delta.ReadValue() * mouseSensitivity;
+        // current position + changed x and y positions
         Vector3 target = _selected.transform.position + new Vector3(delta.x, delta.y, 0f);
         _selected.MoveTo(target);
 
-        // If that move caused it to snap and lock this frame, release our reference.
-        if (_selected.IsLocked) _selected = null;
+        // if the move caused it to lock, release reference
+        if (_selected.isLocked) _selected = null;
     }
 
+    // update the pieces pending in hotbar
     List<PlaceableMarkerLock> PendingPieces()
     {
-        return hotbarPieces.Where(p => p != null && !p.IsSummoned).ToList();
+        List<PlaceableMarkerLock> pending = new List<PlaceableMarkerLock>();
+
+        // loop through all pieces that were set in inspector before runtime
+        for (int i = 0; i < hotbarPieces.Count; i++)
+        {
+            PlaceableMarkerLock piece = hotbarPieces[i];
+
+            // if the current piece we are looking at is no in the scene yet
+            // add it to the list of pieces that can be summoned later
+            if (!piece.isSummoned)
+            {
+                pending.Add(piece);
+            }
+        }
+
+        return pending;
     }
 
     void HandleHotbarInput()
@@ -246,28 +152,36 @@ public class PlaceableObjectController : MonoBehaviour
         List<PlaceableMarkerLock> pending = PendingPieces();
         if (pending.Count == 0) return;
 
-        if (_hotbarIndex >= pending.Count) _hotbarIndex = 0;
+        // if (_hotbarIndex >= pending.Count) _hotbarIndex = 0;
 
-        bool cycleLeft = false, cycleRight = false, summonPressed = false;
+        bool cycleLeft = false;
+        bool cycleRight = false;
+        bool summonPressed = false;
 
-        Gamepad gp = Gamepad.current;
-        if (gp != null)
-        {
-            if (gp.dpad.left.wasPressedThisFrame) cycleLeft = true;
-            if (gp.dpad.right.wasPressedThisFrame) cycleRight = true;
-            if (gp[summonButton].wasPressedThisFrame) summonPressed = true;
-        }
+        // Gamepad gp = Gamepad.current;
+        // if (gp != null)
+        // {
+        //     if (gp.dpad.left.wasPressedThisFrame) cycleLeft = true;
+        //     if (gp.dpad.right.wasPressedThisFrame) cycleRight = true;
+        //     if (gp[summonButton].wasPressedThisFrame) summonPressed = true;
+        // }
 
         Keyboard kb = Keyboard.current;
         if (kb != null)
         {
             if (kb.leftBracketKey.wasPressedThisFrame) cycleLeft = true;
             if (kb.rightBracketKey.wasPressedThisFrame) cycleRight = true;
-            if (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) summonPressed = true;
+            if (kb.spaceKey.wasPressedThisFrame) summonPressed = true;
         }
 
-        if (cycleLeft) _hotbarIndex = (_hotbarIndex - 1 + pending.Count) % pending.Count;
-        if (cycleRight) _hotbarIndex = (_hotbarIndex + 1) % pending.Count;
+        if (cycleLeft == true)
+        {
+            _hotbarIndex = (_hotbarIndex - 1 + pending.Count) % pending.Count;
+        }
+        if (cycleRight == true)
+        {
+            _hotbarIndex = (_hotbarIndex + 1) % pending.Count;
+        }
 
         if (summonPressed && _selected == null)
         {
@@ -295,7 +209,7 @@ public class PlaceableObjectController : MonoBehaviour
 
         if (_hotbarIndex >= pending.Count) _hotbarIndex = 0;
 
-        hotbarPreviewImage.sprite = pending[_hotbarIndex].PreviewSprite;
+        hotbarPreviewImage.sprite = pending[_hotbarIndex].GetPreviewSprite();
         hotbarPreviewImage.enabled = hotbarPreviewImage.sprite != null;
     }
 
@@ -303,7 +217,7 @@ public class PlaceableObjectController : MonoBehaviour
     {
         // Intersect the player's current view direction with a plane at the
         // piece's own fixed depth, so it always appears where they're looking.
-        Plane plane = new Plane(Vector3.forward, new Vector3(0f, 0f, piece.HomeZ));
+        Plane plane = new Plane(Vector3.forward, new Vector3(0f, 0f, piece.homeZ));
         Ray ray = new Ray(headTransform.position, headTransform.forward);
 
         if (plane.Raycast(ray, out float distance))
@@ -314,7 +228,7 @@ public class PlaceableObjectController : MonoBehaviour
         // Fallback (e.g. player already past this depth, looking parallel to
         // the plane): place it at the player's own X/Y at this piece's depth.
         Vector3 fallback = headTransform.position;
-        fallback.z = piece.HomeZ;
+        fallback.z = piece.homeZ;
         return fallback;
     }
 }
