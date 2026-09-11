@@ -464,7 +464,7 @@ MonoBehaviour:
   maxRaycastDistance: 100
   placeableLayers:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 64
   mouseSensitivity: 0.01
   hotbarPieces:
   - {fileID: 483506158}
@@ -473,6 +473,7 @@ MonoBehaviour:
   - {fileID: 797833178}
   summonButton: 7
   hotbarPreviewImage: {fileID: 723432905}
+  spawnDistance: 3
 --- !u!4 &306855183
 Transform:
   m_ObjectHideFlags: 0
@@ -1097,7 +1098,7 @@ Canvas:
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
   m_UseReflectionProbes: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 10

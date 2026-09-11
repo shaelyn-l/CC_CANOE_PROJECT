@@ -15,7 +15,7 @@ public class PlaceableObjectController : MonoBehaviour
     public float maxRaycastDistance = 100f;
 
     // layers considered when raycasting to select an object
-    public LayerMask placeableLayers = LayerMask.GetMask("PuzzlePiece");    
+    public LayerMask placeableLayers;    
 
     // how far object moves per pixel of movement
     [Header("Movement")]
@@ -31,6 +31,9 @@ public class PlaceableObjectController : MonoBehaviour
     // image that shows the sprite of the piece currently selected in the hotbar
     public Image hotbarPreviewImage;
 
+    // how far in front of the player a summoned piece spawns
+    public float spawnDistance = 3f;
+
     int _hotbarIndex = 0;
 
     PlaceableMarkerLock _hovered;
@@ -38,8 +41,6 @@ public class PlaceableObjectController : MonoBehaviour
 
     void Update()
     {
-        // if (headTransform == null) return;
-
         UpdateHover();
         HandleSelectClick();
         HandleHotbarInput();
@@ -152,8 +153,6 @@ public class PlaceableObjectController : MonoBehaviour
         List<PlaceableMarkerLock> pending = PendingPieces();
         if (pending.Count == 0) return;
 
-        // if (_hotbarIndex >= pending.Count) _hotbarIndex = 0;
-
         bool cycleLeft = false;
         bool cycleRight = false;
         bool summonPressed = false;
@@ -195,10 +194,17 @@ public class PlaceableObjectController : MonoBehaviour
         UpdateHotbarPreview();
     }
 
+    // spawn fixed distance in front of where player is currently looking 
+    // then snap the depth to correct z
+     Vector3 ComputeSpawnPoint(PlaceableMarkerLock piece)
+    {
+        Vector3 spawnPoint = headTransform.position + headTransform.forward * spawnDistance;
+        spawnPoint.z = piece.homeZ;
+        return spawnPoint;
+    }
+
     void UpdateHotbarPreview()
     {
-        if (hotbarPreviewImage == null) return;
-
         List<PlaceableMarkerLock> pending = PendingPieces();
 
         if (pending.Count == 0)
@@ -207,28 +213,6 @@ public class PlaceableObjectController : MonoBehaviour
             return;
         }
 
-        if (_hotbarIndex >= pending.Count) _hotbarIndex = 0;
-
-        hotbarPreviewImage.sprite = pending[_hotbarIndex].GetPreviewSprite();
-        hotbarPreviewImage.enabled = hotbarPreviewImage.sprite != null;
-    }
-
-    Vector3 ComputeSpawnPoint(PlaceableMarkerLock piece)
-    {
-        // Intersect the player's current view direction with a plane at the
-        // piece's own fixed depth, so it always appears where they're looking.
-        Plane plane = new Plane(Vector3.forward, new Vector3(0f, 0f, piece.homeZ));
-        Ray ray = new Ray(headTransform.position, headTransform.forward);
-
-        if (plane.Raycast(ray, out float distance))
-        {
-            return ray.GetPoint(distance);
-        }
-
-        // Fallback (e.g. player already past this depth, looking parallel to
-        // the plane): place it at the player's own X/Y at this piece's depth.
-        Vector3 fallback = headTransform.position;
-        fallback.z = piece.homeZ;
-        return fallback;
+        hotbarPreviewImage.sprite = pending[_hotbarIndex].GetComponent<SpriteRenderer>().sprite;
     }
 }
