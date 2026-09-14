@@ -10,13 +10,6 @@ public class PlaceableMarkerLock : MonoBehaviour
     [Header("Hotbar")]
     public bool startHidden = true;
 
-    // tue -> color changes based on state
-    [Header("Interaction Feedback Colors")]
-    public bool useColorFeedback = true;
-    public Color hoverColor = Color.yellow;
-    public Color selectedColor = Color.green;
-    public Color lockedColor = Color.cyan;
-
     public bool isSelected = false;
     public bool isLocked = false;
     public bool isHovered = false;
@@ -48,22 +41,9 @@ public class PlaceableMarkerLock : MonoBehaviour
 
         if (startHidden)
         {
-            HideImmediate();
-        }
-    }
+                pieceRenderer.enabled = false;
 
-    private void HideImmediate()
-    {
-        isHidden = true;
-
-        if (pieceRenderer != null)
-        {
-            pieceRenderer.enabled = false;
-        }
-
-        if (pieceCollider != null)
-        {
-            pieceCollider.enabled = false;
+                pieceCollider.enabled = false;
         }
     }
 
@@ -71,13 +51,6 @@ public class PlaceableMarkerLock : MonoBehaviour
     // worldPoint: where the player is looking (X, Y)
     public void Summon(Vector3 worldPoint)
     {
-        // if piece is already locked, cannot be summoned again
-        // CHECK THIS LOGIC
-        if (isLocked)
-        {
-            return;
-        }
-
         isHidden = false;
         isSummoned = true;
 
@@ -139,12 +112,7 @@ public class PlaceableMarkerLock : MonoBehaviour
         newPosition.z = homeZ;
         transform.position = newPosition;
 
-        CheckForLock();
-    }
-
-    private void CheckForLock()
-    {
-
+        // check for lock
         Vector2 piecePositionXY = new Vector2(transform.position.x, transform.position.y);
         Vector2 markerPositionXY = new Vector2(targetMarker.position.x, targetMarker.position.y);
         float distanceToMarker = Vector2.Distance(piecePositionXY, markerPositionXY);
@@ -167,15 +135,15 @@ public class PlaceableMarkerLock : MonoBehaviour
     {
         if (isLocked)
         {
-            pieceRenderer.material.color = lockedColor;
+            pieceRenderer.material.color = Color.cyan;
         }
         else if (isSelected)
         {
-            pieceRenderer.material.color = selectedColor;
+            pieceRenderer.material.color = Color.green;
         }
         else if (isHovered)
         {
-            pieceRenderer.material.color = hoverColor;
+            pieceRenderer.material.color = Color.yellow;
         }
         else
         {

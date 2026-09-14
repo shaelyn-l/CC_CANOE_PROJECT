@@ -1,19 +1,3 @@
-/* KeyboardTestFlyer
-   TEMPORARY development-only script for moving/aiming CC_HUB with a
-   keyboard when no gamepad is connected. Safe to leave alongside
-   DPadFlyer - that script already no-ops when Gamepad.current is null,
-   so there's no conflict. Remove or disable this once you have a
-   controller hooked up, or just leave it as a permanent keyboard fallback.
-
-   Attach to CC_HUB (same object as DPadFlyer).
-
-   Controls:
-   W/A/S/D - move forward/back/strafe left/right
-   Q/E     - move down/up
-   Arrow Left/Right - yaw
-   Arrow Up/Down    - pitch
-*/
-
 using UnityEngine;
 using UnityEngine.InputSystem;
 

@@ -11,7 +11,7 @@ public class PlaceableObjectController : MonoBehaviour
     public Transform headTransform;
 
     // max raycast distance for selecting
-    public float maxRaycastDistance = 100f;
+    public float maxRaycastDistance = 150f;
 
     // layers considered when raycasting to select an object
     public LayerMask placeableLayers;    
@@ -84,26 +84,8 @@ public class PlaceableObjectController : MonoBehaviour
         }
     }
 
-    // 
     void HandleSelectClick()
     {
-        // Mouse mouse = Mouse.current;
-        // if (mouse.leftButton.wasPressedThisFrame)
-        // {
-        //     // if something is selected but now deselecting
-        //     if (_selected != null)
-        //     {
-        //         _selected.Deselect();
-        //         _selected = null;
-        //     }
-        //     // if an object is in hovered state and not locked, then can move to selected state
-        //     else if (_hovered != null && !_hovered.isLocked)
-        //     {
-        //         _selected = _hovered;
-        //         _selected.Select();
-        //     }
-        // }
-
         Gamepad gamepad = Gamepad.current;
         if (gamepad.buttonEast.wasPressedThisFrame)
         {
@@ -125,30 +107,17 @@ public class PlaceableObjectController : MonoBehaviour
 
     void MoveSelected()
     {
-        // Mouse mouse = Mouse.current;
-
-        // // mouse.delta: how far the mouse moved since last frame
-        // Vector2 delta = mouse.delta.ReadValue() * mouseSensitivity;
-        // // current position + changed x and y positions
-        // Vector3 target = _selected.transform.position + new Vector3(delta.x, delta.y, 0f);
-        // _selected.MoveTo(target);
-
-        // // if the move caused it to lock, release reference
-        // if (_selected.isLocked) _selected = null;
-
-        Gamepad gp = Gamepad.current;
-        // if (gp == null) return;
+        Gamepad gamepad = Gamepad.current;
  
         Vector2 direction = Vector2.zero;
-        if (gp.dpad.up.isPressed) direction.y += 1f;
-        if (gp.dpad.down.isPressed) direction.y -= 1f;
-        if (gp.dpad.left.isPressed) direction.x -= 1f;
-        if (gp.dpad.right.isPressed) direction.x += 1f;
+        if (gamepad.dpad.up.isPressed) direction.y += 1f;
+        if (gamepad.dpad.down.isPressed) direction.y -= 1f;
+        if (gamepad.dpad.left.isPressed) direction.x -= 1f;
+        if (gamepad.dpad.right.isPressed) direction.x += 1f;
 
         Debug.Log(direction);
  
         Vector2 delta = direction * Time.deltaTime;
-        // Vector2 delta = direction; * Time.deltaTime
         // current position + changed x and y positions
         Vector3 target = _selected.transform.position + new Vector3(delta.x, delta.y, 0f);
         _selected.MoveTo(target);
@@ -188,12 +157,9 @@ public class PlaceableObjectController : MonoBehaviour
         bool summonPressed = false;
 
         Gamepad gamepad = Gamepad.current;
-        if (gamepad != null)
-        {
-            if (gamepad.leftTrigger.wasPressedThisFrame) cycleLeft = true;
-            if (gamepad.rightTrigger.wasPressedThisFrame) cycleRight = true;
-            if (gamepad.buttonNorth.wasPressedThisFrame) summonPressed = true;
-        }
+        if (gamepad.leftTrigger.wasPressedThisFrame) cycleLeft = true;
+        if (gamepad.rightTrigger.wasPressedThisFrame) cycleRight = true;
+        if (gamepad.buttonNorth.wasPressedThisFrame) summonPressed = true;
 
         // Keyboard kb = Keyboard.current;
         // if (kb != null)
