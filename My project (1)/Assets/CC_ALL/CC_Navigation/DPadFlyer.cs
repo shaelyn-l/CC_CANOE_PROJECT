@@ -77,16 +77,17 @@ public class DPadFlyer : MonoBehaviour
         float verticalInput2 = -gamepad.leftStick.ReadValue().y;
 
         // Left and right trigger is for roll
-        float leftInput=gamepad.leftTrigger.ReadValue() ; //= Input.GetAxis("LeftTrigger");
-        float rightInput=gamepad.rightTrigger.ReadValue(); // = Input.GetAxis("RightTrigger");
+        // float leftInput=gamepad.leftTrigger.ReadValue() ; //= Input.GetAxis("LeftTrigger");
+        // float rightInput=gamepad.rightTrigger.ReadValue(); // = Input.GetAxis("RightTrigger");
 
         // Rotate the XRRig about the main cameras direction of view
         if (!flipPitch) verticalInput = -verticalInput;
 
         transform.Rotate(mainCam.transform.right, verticalInput* rotateSpeed * Time.deltaTime, Space.World);
         transform.Rotate(mainCam.transform.up, horizontalInput* rotateSpeed * Time.deltaTime, Space.World);
-        transform.Rotate(mainCam.transform.forward, leftInput* rotateSpeed * Time.deltaTime, Space.World);
-        transform.Rotate(mainCam.transform.forward, -rightInput* rotateSpeed * Time.deltaTime, Space.World);
+        // transform.Rotate(mainCam.transform.forward, leftInput* rotateSpeed * Time.deltaTime, Space.World);
+        // transform.Rotate(mainCam.transform.forward, -rightInput* rotateSpeed * Time.deltaTime, Space.World);
+
 
         // Translate the XRRig about the main cameras axis
         transform.Translate(new Vector3(horizontalInput2,0 , -verticalInput2) * moveSpeed/2 * Time.deltaTime,mainCam.transform);

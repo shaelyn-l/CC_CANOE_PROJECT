@@ -16,16 +16,9 @@ public class PlaceableObjectController : MonoBehaviour
     // layers considered when raycasting to select an object
     public LayerMask placeableLayers;    
 
-    // how far object moves per pixel of movement
-    [Header("Movement")]
-    public float mouseSensitivity = 0.01f;
-
     [Header("Hotbar")]
     // puzzle pieces to summon via hotbar
     public List<PlaceableMarkerLock> hotbarPieces = new List<PlaceableMarkerLock>();
-
-    // gamepad button used to summon the currently-selected hotbar piece
-    public GamepadButton summonButton = GamepadButton.West;
 
     // image that shows the sprite of the piece currently selected in the hotbar
     public Image hotbarPreviewImage;
@@ -94,8 +87,25 @@ public class PlaceableObjectController : MonoBehaviour
     // 
     void HandleSelectClick()
     {
-        Mouse mouse = Mouse.current;
-        if (mouse.leftButton.wasPressedThisFrame)
+        // Mouse mouse = Mouse.current;
+        // if (mouse.leftButton.wasPressedThisFrame)
+        // {
+        //     // if something is selected but now deselecting
+        //     if (_selected != null)
+        //     {
+        //         _selected.Deselect();
+        //         _selected = null;
+        //     }
+        //     // if an object is in hovered state and not locked, then can move to selected state
+        //     else if (_hovered != null && !_hovered.isLocked)
+        //     {
+        //         _selected = _hovered;
+        //         _selected.Select();
+        //     }
+        // }
+
+        Gamepad gamepad = Gamepad.current;
+        if (gamepad.buttonEast.wasPressedThisFrame)
         {
             // if something is selected but now deselecting
             if (_selected != null)
@@ -115,14 +125,34 @@ public class PlaceableObjectController : MonoBehaviour
 
     void MoveSelected()
     {
-        Mouse mouse = Mouse.current;
+        // Mouse mouse = Mouse.current;
 
-        // mouse.delta: how far the mouse moved since last frame
-        Vector2 delta = mouse.delta.ReadValue() * mouseSensitivity;
+        // // mouse.delta: how far the mouse moved since last frame
+        // Vector2 delta = mouse.delta.ReadValue() * mouseSensitivity;
+        // // current position + changed x and y positions
+        // Vector3 target = _selected.transform.position + new Vector3(delta.x, delta.y, 0f);
+        // _selected.MoveTo(target);
+
+        // // if the move caused it to lock, release reference
+        // if (_selected.isLocked) _selected = null;
+
+        Gamepad gp = Gamepad.current;
+        // if (gp == null) return;
+ 
+        Vector2 direction = Vector2.zero;
+        if (gp.dpad.up.isPressed) direction.y += 1f;
+        if (gp.dpad.down.isPressed) direction.y -= 1f;
+        if (gp.dpad.left.isPressed) direction.x -= 1f;
+        if (gp.dpad.right.isPressed) direction.x += 1f;
+
+        Debug.Log(direction);
+ 
+        Vector2 delta = direction * Time.deltaTime;
+        // Vector2 delta = direction; * Time.deltaTime
         // current position + changed x and y positions
         Vector3 target = _selected.transform.position + new Vector3(delta.x, delta.y, 0f);
         _selected.MoveTo(target);
-
+ 
         // if the move caused it to lock, release reference
         if (_selected.isLocked) _selected = null;
     }
@@ -157,21 +187,21 @@ public class PlaceableObjectController : MonoBehaviour
         bool cycleRight = false;
         bool summonPressed = false;
 
-        // Gamepad gp = Gamepad.current;
-        // if (gp != null)
-        // {
-        //     if (gp.dpad.left.wasPressedThisFrame) cycleLeft = true;
-        //     if (gp.dpad.right.wasPressedThisFrame) cycleRight = true;
-        //     if (gp[summonButton].wasPressedThisFrame) summonPressed = true;
-        // }
-
-        Keyboard kb = Keyboard.current;
-        if (kb != null)
+        Gamepad gamepad = Gamepad.current;
+        if (gamepad != null)
         {
-            if (kb.leftBracketKey.wasPressedThisFrame) cycleLeft = true;
-            if (kb.rightBracketKey.wasPressedThisFrame) cycleRight = true;
-            if (kb.spaceKey.wasPressedThisFrame) summonPressed = true;
+            if (gamepad.leftTrigger.wasPressedThisFrame) cycleLeft = true;
+            if (gamepad.rightTrigger.wasPressedThisFrame) cycleRight = true;
+            if (gamepad.buttonNorth.wasPressedThisFrame) summonPressed = true;
         }
+
+        // Keyboard kb = Keyboard.current;
+        // if (kb != null)
+        // {
+        //     if (kb.leftBracketKey.wasPressedThisFrame) cycleLeft = true;
+        //     if (kb.rightBracketKey.wasPressedThisFrame) cycleRight = true;
+        //     if (kb.spaceKey.wasPressedThisFrame) summonPressed = true;
+        // }
 
         if (cycleLeft == true)
         {
