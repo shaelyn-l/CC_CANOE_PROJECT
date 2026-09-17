@@ -7,11 +7,11 @@ using UnityEngine.UI;
 public class PlaceableObjectController : MonoBehaviour
 {
     // whose transform position define the crosshair ray
-    [Header("Crosshair Raycast")]
+    [Header("Raycast Position")]
     public Transform headTransform;
 
     // max raycast distance for selecting
-    public float maxRaycastDistance = 150f;
+    private float maxRaycastDistance = 150f;
 
     // layers considered when raycasting to select an object
     public LayerMask placeableLayers;    
@@ -24,12 +24,12 @@ public class PlaceableObjectController : MonoBehaviour
     public Image hotbarPreviewImage;
 
     // how far in front of the player a summoned piece spawns
-    public float spawnDistance = 3f;
+    private float spawnDistance = 3f;
 
-    int _hotbarIndex = 0;
+    int hotbarIndex = 0;
 
-    PlaceableMarkerLock _hovered;
-    PlaceableMarkerLock _selected;
+    PlaceableMarkerLock hovered;
+    PlaceableMarkerLock selected;
 
     void Update()
     {
@@ -37,7 +37,7 @@ public class PlaceableObjectController : MonoBehaviour
         HandleSelectClick();
         HandleHotbarInput();
 
-        if (_selected != null)
+        if (selected != null)
         {
             MoveSelected();
         }
@@ -57,29 +57,29 @@ public class PlaceableObjectController : MonoBehaviour
         }
 
         // if what raycast found was different than what was looked at last frame
-        if (newHover != _hovered)
+        if (newHover != hovered)
         {
-            bool somethingHoveredBefore = _hovered != null;
+            bool somethingHoveredBefore = hovered != null;
             bool somethingHoveredNow = newHover != null;
 
              // was looking and one piece but now looking at another piece
             if (somethingHoveredBefore && somethingHoveredNow)
             {
-                _hovered.SetHovered(false);
-                _hovered = newHover;
-                _hovered.SetHovered(true);
+                hovered.SetHovered(false);
+                hovered = newHover;
+                hovered.SetHovered(true);
             }
             // was looking at a piece and now looking at nothing
             else if (somethingHoveredBefore && !somethingHoveredNow)
             {
-                _hovered.SetHovered(false);
-                _hovered = newHover;
+                hovered.SetHovered(false);
+                hovered = newHover;
             }
             // not looking at anything before but now looking at something
             else if (!somethingHoveredBefore && somethingHoveredNow)
             {
-                _hovered = newHover;
-                _hovered.SetHovered(true);
+                hovered = newHover;
+                hovered.SetHovered(true);
             }
         }
     }
@@ -90,16 +90,16 @@ public class PlaceableObjectController : MonoBehaviour
         if (gamepad.buttonEast.wasPressedThisFrame)
         {
             // if something is selected but now deselecting
-            if (_selected != null)
+            if (selected != null)
             {
-                _selected.Deselect();
-                _selected = null;
+                selected.Deselect();
+                selected = null;
             }
             // if an object is in hovered state and not locked, then can move to selected state
-            else if (_hovered != null && !_hovered.isLocked)
+            else if (hovered != null && !hovered.isLocked)
             {
-                _selected = _hovered;
-                _selected.Select();
+                selected = hovered;
+                selected.Select();
             }
         }
         
@@ -119,11 +119,11 @@ public class PlaceableObjectController : MonoBehaviour
  
         Vector2 delta = direction * Time.deltaTime;
         // current position + changed x and y positions
-        Vector3 target = _selected.transform.position + new Vector3(delta.x, delta.y, 0f);
-        _selected.MoveTo(target);
+        Vector3 target = selected.transform.position + new Vector3(delta.x, delta.y, 0f);
+        selected.MoveTo(target);
  
         // if the move caused it to lock, release reference
-        if (_selected.isLocked) _selected = null;
+        if (selected.isLocked) selected = null;
     }
 
     // update the pieces pending in hotbar
@@ -171,24 +171,24 @@ public class PlaceableObjectController : MonoBehaviour
 
         if (cycleLeft == true)
         {
-            _hotbarIndex = (_hotbarIndex - 1 + pending.Count) % pending.Count;
+            hotbarIndex = (hotbarIndex - 1 + pending.Count) % pending.Count;
         }
         if (cycleRight == true)
         {
-            _hotbarIndex = (_hotbarIndex + 1) % pending.Count;
+            hotbarIndex = (hotbarIndex + 1) % pending.Count;
         }
 
-        if (summonPressed && _selected == null)
+        if (summonPressed && selected == null)
         {
-            PlaceableMarkerLock piece = pending[_hotbarIndex];
+            PlaceableMarkerLock piece = pending[hotbarIndex];
 
             // compute spawn point of object 
             Vector3 spawnPoint = headTransform.position + headTransform.forward * spawnDistance;
             spawnPoint.z = piece.homeZ;
 
             piece.Summon(spawnPoint);
-            _selected = piece;
-            _hotbarIndex = 0;
+            selected = piece;
+            hotbarIndex = 0;
         }
         UpdateHotbarPreview();
     }
@@ -203,6 +203,6 @@ public class PlaceableObjectController : MonoBehaviour
             return;
         }
 
-        hotbarPreviewImage.sprite = pending[_hotbarIndex].GetComponent<SpriteRenderer>().sprite;
+        hotbarPreviewImage.sprite = pending[hotbarIndex].GetComponent<SpriteRenderer>().sprite;
     }
 }
