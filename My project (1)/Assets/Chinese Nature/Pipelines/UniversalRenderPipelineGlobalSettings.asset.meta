@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6f9db5ee4948cbf49af31590e20db0a4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296079
+  packageName: Chinese Nature / Anime style
+  packageVersion: 1.0
+  assetPath: Assets/Chinese Nature/Pipelines/UniversalRenderPipelineGlobalSettings.asset
+  uploadId: 698256
