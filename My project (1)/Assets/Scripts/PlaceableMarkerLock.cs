@@ -16,51 +16,58 @@ public class PlaceableMarkerLock : MonoBehaviour
     public bool isHidden = false;
     public bool isSummoned = false;
 
-    // how close in X/Y the piece's center needs to get to marker before it snaps into place
+    // how close in X/Y/Z the piece's center needs to get to marker before it snaps into place
     public float lockThreshold = 0.25f;
 
-    // permanent depth in the finished puzzle
-    //captured before the piece is hidden so summoning later puts it back at the right depth
-    public float homeZ;
+    // the flat icon shown in the hotbar preview - assigned manually, independent
+    // of whatever this piece actually looks like in 3D (sprite, mesh, primitive, etc.)
+    public Sprite previewIcon;
 
-    private Renderer pieceRenderer;
+    private Renderer[] pieceRenderers;
     private Collider pieceCollider;
-    private Color originalColor;
+    private Color[] originalColors;
 
     void Awake()
     {
-        // get references to the renderer and collider of gameobject
-        pieceRenderer = GetComponent<Renderer>();
+        // get every renderer in this object AND its children (like the
+        // sprite child) - GetComponentsInChildren includes the object
+        // itself, not just children, so this covers both in one call
+        pieceRenderers = GetComponentsInChildren<Renderer>(true);
         pieceCollider = GetComponent<Collider>();
 
-        originalColor = pieceRenderer.material.color;
-
-        // Remember where this piece was placed in the editor - that is its
-        // correct final depth for the puzzle, and it should never change.
-        homeZ = transform.position.z;
+        // remember each renderer's own starting color individually
+        originalColors = new Color[pieceRenderers.Length];
+        for (int i = 0; i < pieceRenderers.Length; i++)
+        {
+            originalColors[i] = pieceRenderers[i].material.color;
+        }
 
         if (startHidden)
         {
-                pieceRenderer.enabled = false;
+            for (int i = 0; i < pieceRenderers.Length; i++)
+            {
+                pieceRenderers[i].enabled = false;
+            }
 
-                pieceCollider.enabled = false;
+            pieceCollider.enabled = false;
         }
     }
 
     // called by PlaceableObjectController when the player summons object out of hotbar
-    // worldPoint: where the player is looking (X, Y)
+    // worldPoint: where the player is looking (X, Y, Z) - the piece spawns exactly there now
     public void Summon(Vector3 worldPoint)
     {
         isHidden = false;
         isSummoned = true;
 
-        pieceRenderer.enabled = true;
+        for (int i = 0; i < pieceRenderers.Length; i++)
+        {
+            pieceRenderers[i].enabled = true;
+        }
 
         pieceCollider.enabled = true;
 
-        Vector3 spawnPosition = worldPoint;
-        spawnPosition.z = homeZ;
-        transform.position = spawnPosition;
+        transform.position = worldPoint;
 
         // piece automatically picked up
         Select();
@@ -98,7 +105,8 @@ public class PlaceableMarkerLock : MonoBehaviour
         UpdateVisual();
     }
 
-    // called every frame by PlaceableObjectController while this piece is selected with a new position to move to
+    // called every frame by PlaceableObjectController while this piece is selected with a new position to move to.
+    // now uses the full X, Y, and Z of worldPoint - the piece can move freely in all three axes.
     public void MoveTo(Vector3 worldPoint)
     {
         if (!isSelected || isLocked)
@@ -106,23 +114,19 @@ public class PlaceableMarkerLock : MonoBehaviour
             return;
         }
 
-        Vector3 newPosition = transform.position;
-        newPosition.x = worldPoint.x;
-        newPosition.y = worldPoint.y;
-        newPosition.z = homeZ;
-        transform.position = newPosition;
+        transform.position = worldPoint;
 
-        // check for lock
-        Vector2 piecePositionXY = new Vector2(transform.position.x, transform.position.y);
-        Vector2 markerPositionXY = new Vector2(targetMarker.position.x, targetMarker.position.y);
-        float distanceToMarker = Vector2.Distance(piecePositionXY, markerPositionXY);
+        // Use the marker's actual visual center, not just its transform
+        // position - if the marker's pivot isn't centered on its mesh
+        // (a common issue with imported/exported objects), comparing
+        // against raw .position would measure to a corner instead of
+        // the middle of the cube.
+        Vector3 markerCenter = GetMarkerCenter();
+        float distanceToMarker = Vector3.Distance(transform.position, markerCenter);
 
         if (distanceToMarker <= lockThreshold)
         {
-            Vector3 lockedPosition = transform.position;
-            lockedPosition.x = targetMarker.position.x;
-            lockedPosition.y = targetMarker.position.y;
-            transform.position = lockedPosition;
+            transform.position = markerCenter;
 
             isLocked = true;
             isSelected = false;
@@ -131,23 +135,49 @@ public class PlaceableMarkerLock : MonoBehaviour
         }
     }
 
+    private Vector3 GetMarkerCenter()
+    {
+        Renderer markerRenderer = targetMarker.GetComponent<Renderer>();
+
+        if (markerRenderer != null)
+        {
+            return markerRenderer.bounds.center;
+        }
+
+        // fallback for a marker with no renderer at all (e.g. a plain
+        // empty object used purely as a position reference)
+        return targetMarker.position;
+    }
+
     private void UpdateVisual()
     {
         if (isLocked)
         {
-            pieceRenderer.material.color = Color.cyan;
+            SetAllRenderersColor(Color.cyan);
         }
         else if (isSelected)
         {
-            pieceRenderer.material.color = Color.green;
+            SetAllRenderersColor(Color.green);
         }
         else if (isHovered)
         {
-            pieceRenderer.material.color = Color.yellow;
+            SetAllRenderersColor(Color.yellow);
         }
         else
         {
-            pieceRenderer.material.color = originalColor;
+            // restore each renderer to its own original color individually
+            for (int i = 0; i < pieceRenderers.Length; i++)
+            {
+                pieceRenderers[i].material.color = originalColors[i];
+            }
+        }
+    }
+
+    private void SetAllRenderersColor(Color color)
+    {
+        for (int i = 0; i < pieceRenderers.Length; i++)
+        {
+            pieceRenderers[i].material.color = color;
         }
     }
 }
