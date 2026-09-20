@@ -1,7 +1,17 @@
 using UnityEngine;
 
+[RequireComponent(typeof(AudioSource))]
 public class PlaceableMarkerLock : MonoBehaviour
 {
+    [Header("Sounds")]
+    public AudioClip selectedSound;
+    public AudioClip droppedSound;
+    public AudioClip hoveredSound;
+    public AudioClip lockedSound;
+    public AudioClip summonedSound;
+
+    private AudioSource pieceAudioSource;
+
     // the markerthe piece should snap to
     [Header("Pairing")]
     public Transform targetMarker;
@@ -17,7 +27,7 @@ public class PlaceableMarkerLock : MonoBehaviour
     public bool isSummoned = false;
 
     // how close in X/Y/Z the piece's center needs to get to marker before it snaps into place
-    public float lockThreshold = 0.25f;
+    public float lockThreshold = 0.5f;
 
     // the flat icon shown in the hotbar preview - assigned manually, independent
     // of whatever this piece actually looks like in 3D (sprite, mesh, primitive, etc.)
@@ -34,6 +44,7 @@ public class PlaceableMarkerLock : MonoBehaviour
         // itself, not just children, so this covers both in one call
         pieceRenderers = GetComponentsInChildren<Renderer>(true);
         pieceCollider = GetComponent<Collider>();
+        pieceAudioSource = GetComponent<AudioSource>();
 
         // remember each renderer's own starting color individually
         originalColors = new Color[pieceRenderers.Length];
@@ -69,6 +80,8 @@ public class PlaceableMarkerLock : MonoBehaviour
 
         transform.position = worldPoint;
 
+        PlaySound(summonedSound);
+
         // piece automatically picked up
         Select();
     }
@@ -83,6 +96,15 @@ public class PlaceableMarkerLock : MonoBehaviour
 
         isHovered = hovered;
         UpdateVisual();
+
+        // only play a sound when hover actually STARTS, not when it ends -
+        // this method is only called on genuine transitions anyway (the
+        // controller only calls it when what's being looked at changes),
+        // so this doesn't need its own debounce logic
+        if (hovered)
+        {
+            PlaySound(hoveredSound);
+        }
     }
 
     //called by PlaceableObjectController when the player picks the piece up
@@ -96,6 +118,7 @@ public class PlaceableMarkerLock : MonoBehaviour
         isSelected = true;
 
         UpdateVisual();
+        PlaySound(selectedSound);
     }
 
     // called by PlaceableObjectController when the player puts this piece back without locking it
@@ -103,6 +126,7 @@ public class PlaceableMarkerLock : MonoBehaviour
     {
         isSelected = false;
         UpdateVisual();
+        PlaySound(droppedSound);
     }
 
     // called every frame by PlaceableObjectController while this piece is selected with a new position to move to.
@@ -132,6 +156,7 @@ public class PlaceableMarkerLock : MonoBehaviour
             isSelected = false;
             isHovered = false;
             UpdateVisual();
+            PlaySound(lockedSound);
         }
     }
 
@@ -179,5 +204,19 @@ public class PlaceableMarkerLock : MonoBehaviour
         {
             pieceRenderers[i].material.color = color;
         }
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        // if this state's clip was left empty in the Inspector, just skip
+        // it silently rather than erroring
+        if (clip == null)
+        {
+            return;
+        }
+
+        // PlayOneShot lets sounds overlap (e.g. a quick hover-then-select)
+        // instead of cutting each other off the way Play() would
+        pieceAudioSource.PlayOneShot(clip);
     }
 }

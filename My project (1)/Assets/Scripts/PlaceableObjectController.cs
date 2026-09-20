@@ -53,6 +53,16 @@ public class PlaceableObjectController : MonoBehaviour
     // interact with SetHovered from PlacableMarkerLock
     void UpdateHover()
     {
+        // hover has no purpose while a piece is already selected - the
+        // next button press just drops whatever's currently held, it
+        // never acts on hover. Skipping this entirely while carrying
+        // something also stops stray hover sounds/color changes from
+        // firing on pieces the crosshair happens to sweep across mid-drag.
+        if (selected != null)
+        {
+            return;
+        }
+
         PlaceableMarkerLock newHover = null;
 
         // building the ray to represent where user is looking
