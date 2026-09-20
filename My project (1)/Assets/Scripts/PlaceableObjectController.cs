@@ -2,16 +2,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
-using UnityEngine.UI;
 
 public class PlaceableObjectController : MonoBehaviour
 {
     // whose transform position define the crosshair ray
-    [Header("Crosshair Raycast")]
+    [Header("Raycast Position")]
     public Transform headTransform;
 
     // max raycast distance for selecting
-    public float maxRaycastDistance = 150f;
+    private float maxRaycastDistance = 150f;
 
     // layers considered when raycasting to select an object
     public LayerMask placeableLayers;    
@@ -20,24 +19,32 @@ public class PlaceableObjectController : MonoBehaviour
     // puzzle pieces to summon via hotbar
     public List<PlaceableMarkerLock> hotbarPieces = new List<PlaceableMarkerLock>();
 
-    // image that shows the sprite of the piece currently selected in the hotbar
-    public Image hotbarPreviewImage;
+    // sprite renderer that shows the sprite of the piece currently selected in the hotbar
+    public SpriteRenderer hotbarPreviewRenderer;
 
     // how far in front of the player a summoned piece spawns
-    public float spawnDistance = 3f;
+    private float spawnDistance = 3f;
 
-    int _hotbarIndex = 0;
+    // how many world units per second a piece moves at full input
+    public float moveSpeed = 0.5f;
 
-    PlaceableMarkerLock _hovered;
-    PlaceableMarkerLock _selected;
+    int hotbarIndex = 0;
+
+    PlaceableMarkerLock hovered;
+    PlaceableMarkerLock selected;
+
+    // true while X is toggled on - triggers control Z movement instead of
+    // cycling the hotbar
+    bool zAxisMode = false;
 
     void Update()
     {
         UpdateHover();
         HandleSelectClick();
+        HandleZAxisModeToggle();
         HandleHotbarInput();
 
-        if (_selected != null)
+        if (selected != null)
         {
             MoveSelected();
         }
@@ -57,29 +64,29 @@ public class PlaceableObjectController : MonoBehaviour
         }
 
         // if what raycast found was different than what was looked at last frame
-        if (newHover != _hovered)
+        if (newHover != hovered)
         {
-            bool somethingHoveredBefore = _hovered != null;
+            bool somethingHoveredBefore = hovered != null;
             bool somethingHoveredNow = newHover != null;
 
              // was looking and one piece but now looking at another piece
             if (somethingHoveredBefore && somethingHoveredNow)
             {
-                _hovered.SetHovered(false);
-                _hovered = newHover;
-                _hovered.SetHovered(true);
+                hovered.SetHovered(false);
+                hovered = newHover;
+                hovered.SetHovered(true);
             }
             // was looking at a piece and now looking at nothing
             else if (somethingHoveredBefore && !somethingHoveredNow)
             {
-                _hovered.SetHovered(false);
-                _hovered = newHover;
+                hovered.SetHovered(false);
+                hovered = newHover;
             }
             // not looking at anything before but now looking at something
             else if (!somethingHoveredBefore && somethingHoveredNow)
             {
-                _hovered = newHover;
-                _hovered.SetHovered(true);
+                hovered = newHover;
+                hovered.SetHovered(true);
             }
         }
     }
@@ -90,40 +97,57 @@ public class PlaceableObjectController : MonoBehaviour
         if (gamepad.buttonEast.wasPressedThisFrame)
         {
             // if something is selected but now deselecting
-            if (_selected != null)
+            if (selected != null)
             {
-                _selected.Deselect();
-                _selected = null;
+                selected.Deselect();
+                selected = null;
             }
             // if an object is in hovered state and not locked, then can move to selected state
-            else if (_hovered != null && !_hovered.isLocked)
+            else if (hovered != null && !hovered.isLocked)
             {
-                _selected = _hovered;
-                _selected.Select();
+                selected = hovered;
+                selected.Select();
             }
         }
         
     }
 
+    // West/X toggles whether the triggers cycle the hotbar or move the
+    // selected piece along Z instead
+    void HandleZAxisModeToggle()
+    {
+        Gamepad gamepad = Gamepad.current;
+        if (gamepad.buttonWest.wasPressedThisFrame)
+        {
+            zAxisMode = !zAxisMode;
+        }
+    }
+
     void MoveSelected()
     {
         Gamepad gamepad = Gamepad.current;
- 
-        Vector2 direction = Vector2.zero;
-        if (gamepad.dpad.up.isPressed) direction.y += 1f;
-        if (gamepad.dpad.down.isPressed) direction.y -= 1f;
-        if (gamepad.dpad.left.isPressed) direction.x -= 1f;
-        if (gamepad.dpad.right.isPressed) direction.x += 1f;
 
-        Debug.Log(direction);
- 
-        Vector2 delta = direction * Time.deltaTime;
-        // current position + changed x and y positions
-        Vector3 target = _selected.transform.position + new Vector3(delta.x, delta.y, 0f);
-        _selected.MoveTo(target);
+        Vector3 direction = Vector3.zero;
+        if (gamepad.dpad.up.isPressed) direction.y += 0.25f;
+        if (gamepad.dpad.down.isPressed) direction.y -= 0.25f;
+        if (gamepad.dpad.left.isPressed) direction.x -= 0.5f;
+        if (gamepad.dpad.right.isPressed) direction.x += 0.5f;
+
+        // triggers only move the piece in Z while zAxisMode is active -
+        // otherwise they're busy cycling the hotbar instead
+        if (zAxisMode)
+        {
+            if (gamepad.rightTrigger.isPressed) direction.z -= 0.5f; // back
+            if (gamepad.leftTrigger.isPressed) direction.z += 0.5f;  // forward
+        }
+
+        Vector3 delta = direction * moveSpeed * Time.deltaTime;
+        // current position + changed x, y, and z positions
+        Vector3 target = selected.transform.position + delta;
+        selected.MoveTo(target);
  
         // if the move caused it to lock, release reference
-        if (_selected.isLocked) _selected = null;
+        if (selected.isLocked) selected = null;
     }
 
     // update the pieces pending in hotbar
@@ -157,8 +181,15 @@ public class PlaceableObjectController : MonoBehaviour
         bool summonPressed = false;
 
         Gamepad gamepad = Gamepad.current;
-        if (gamepad.leftTrigger.wasPressedThisFrame) cycleLeft = true;
-        if (gamepad.rightTrigger.wasPressedThisFrame) cycleRight = true;
+
+        // while zAxisMode is active, the triggers are busy moving the
+        // selected piece in Z instead of cycling the hotbar
+        if (!zAxisMode)
+        {
+            if (gamepad.leftTrigger.wasPressedThisFrame) cycleLeft = true;
+            if (gamepad.rightTrigger.wasPressedThisFrame) cycleRight = true;
+        }
+
         if (gamepad.buttonNorth.wasPressedThisFrame) summonPressed = true;
 
         // Keyboard kb = Keyboard.current;
@@ -171,24 +202,24 @@ public class PlaceableObjectController : MonoBehaviour
 
         if (cycleLeft == true)
         {
-            _hotbarIndex = (_hotbarIndex - 1 + pending.Count) % pending.Count;
+            hotbarIndex = (hotbarIndex - 1 + pending.Count) % pending.Count;
         }
         if (cycleRight == true)
         {
-            _hotbarIndex = (_hotbarIndex + 1) % pending.Count;
+            hotbarIndex = (hotbarIndex + 1) % pending.Count;
         }
 
-        if (summonPressed && _selected == null)
+        if (summonPressed && selected == null)
         {
-            PlaceableMarkerLock piece = pending[_hotbarIndex];
+            PlaceableMarkerLock piece = pending[hotbarIndex];
 
-            // compute spawn point of object 
+            // compute spawn point of object - now used directly in all
+            // three axes, no depth override
             Vector3 spawnPoint = headTransform.position + headTransform.forward * spawnDistance;
-            spawnPoint.z = piece.homeZ;
 
             piece.Summon(spawnPoint);
-            _selected = piece;
-            _hotbarIndex = 0;
+            selected = piece;
+            hotbarIndex = 0;
         }
         UpdateHotbarPreview();
     }
@@ -199,10 +230,11 @@ public class PlaceableObjectController : MonoBehaviour
 
         if (pending.Count == 0)
         {
-            hotbarPreviewImage.enabled = false;
+            hotbarPreviewRenderer.enabled = false;
             return;
         }
 
-        hotbarPreviewImage.sprite = pending[_hotbarIndex].GetComponent<SpriteRenderer>().sprite;
+        hotbarPreviewRenderer.enabled = true;
+        hotbarPreviewRenderer.sprite = pending[hotbarIndex].previewIcon;
     }
 }
