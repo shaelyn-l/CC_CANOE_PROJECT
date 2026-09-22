@@ -156,18 +156,18 @@ public class PlaceableObjectController : MonoBehaviour
         bool cycleRight = false;
         bool summonPressed = false;
 
-        Gamepad gamepad = Gamepad.current;
-        if (gamepad.leftTrigger.wasPressedThisFrame) cycleLeft = true;
-        if (gamepad.rightTrigger.wasPressedThisFrame) cycleRight = true;
-        if (gamepad.buttonNorth.wasPressedThisFrame) summonPressed = true;
+        //Gamepad gamepad = Gamepad.current;
+        //if (gamepad.leftTrigger.wasPressedThisFrame) cycleLeft = true;
+        //if (gamepad.rightTrigger.wasPressedThisFrame) cycleRight = true;
+        //if (gamepad.buttonNorth.wasPressedThisFrame) summonPressed = true;
 
-        // Keyboard kb = Keyboard.current;
-        // if (kb != null)
-        // {
-        //     if (kb.leftBracketKey.wasPressedThisFrame) cycleLeft = true;
-        //     if (kb.rightBracketKey.wasPressedThisFrame) cycleRight = true;
-        //     if (kb.spaceKey.wasPressedThisFrame) summonPressed = true;
-        // }
+        Keyboard kb = Keyboard.current;
+        if (kb != null)
+        {
+            if (kb.leftBracketKey.wasPressedThisFrame) cycleLeft = true;
+            if (kb.rightBracketKey.wasPressedThisFrame) cycleRight = true;
+            if (kb.spaceKey.wasPressedThisFrame) summonPressed = true;
+        }
 
         if (cycleLeft == true)
         {

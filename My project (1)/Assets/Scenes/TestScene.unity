@@ -465,13 +465,11 @@ MonoBehaviour:
   placeableLayers:
     serializedVersion: 2
     m_Bits: 64
-  mouseSensitivity: 0.01
   hotbarPieces:
   - {fileID: 483506158}
   - {fileID: 1705232653}
   - {fileID: 1340837807}
   - {fileID: 797833178}
-  summonButton: 7
   hotbarPreviewImage: {fileID: 723432905}
   spawnDistance: 3
 --- !u!4 &306855183
@@ -576,7 +574,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 2.18, y: 1.2, z: 2.144}
-  m_LocalScale: {x: 0.025, y: 0.025, z: 1}
+  m_LocalScale: {x: 0.025, y: 0.025, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -614,10 +612,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlaceableMarkerLock
   targetMarker: {fileID: 1519800679}
   startHidden: 1
-  useColorFeedback: 1
-  hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  selectedColor: {r: 0, g: 1, b: 0, a: 1}
-  lockedColor: {r: 0, g: 1, b: 1, a: 1}
   isSelected: 0
   isLocked: 0
   isHovered: 0
@@ -908,10 +902,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlaceableMarkerLock
   targetMarker: {fileID: 1183465494}
   startHidden: 1
-  useColorFeedback: 1
-  hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  selectedColor: {r: 0, g: 1, b: 0, a: 1}
-  lockedColor: {r: 0, g: 1, b: 1, a: 1}
   isSelected: 0
   isLocked: 0
   isHovered: 0
@@ -1215,6 +1205,113 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1309856842
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1309856846}
+  - component: {fileID: 1309856845}
+  - component: {fileID: 1309856844}
+  - component: {fileID: 1309856843}
+  m_Layer: 0
+  m_Name: Duck3D
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1309856843
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1309856842}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b8f66762a4204cb9b053774da3aa453, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PixelSpriteExtruder
+  texture: {fileID: 0}
+  pixelSize: 0.02
+  depth: 0.5
+  alphaThreshold: 0.1
+--- !u!23 &1309856844
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1309856842}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 72df1d620fc0647e395c53f2cad6d3e3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1309856845
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1309856842}
+  m_Mesh: {fileID: 0}
+--- !u!4 &1309856846
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1309856842}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.54, y: 3.89, z: 6.79}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1340837806
 GameObject:
   m_ObjectHideFlags: 0
@@ -1248,10 +1345,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlaceableMarkerLock
   targetMarker: {fileID: 117003301}
   startHidden: 1
-  useColorFeedback: 1
-  hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  selectedColor: {r: 0, g: 1, b: 0, a: 1}
-  lockedColor: {r: 0, g: 1, b: 1, a: 1}
   isSelected: 0
   isLocked: 0
   isHovered: 0
@@ -1480,10 +1573,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlaceableMarkerLock
   targetMarker: {fileID: 360459695}
   startHidden: 1
-  useColorFeedback: 1
-  hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  selectedColor: {r: 0, g: 1, b: 0, a: 1}
-  lockedColor: {r: 0, g: 1, b: 1, a: 1}
   isSelected: 0
   isLocked: 0
   isHovered: 0
@@ -1709,3 +1798,4 @@ SceneRoots:
   - {fileID: 797833181}
   - {fileID: 306855183}
   - {fileID: 883417786}
+  - {fileID: 1309856846}

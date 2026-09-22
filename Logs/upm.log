@@ -1,0 +1,13 @@
+[2026-09-17T01:57:54.954Z][INFO] Command-line: /Applications/Unity/Hub/Editor/6000.5.10f1/Unity.app/Contents/Helpers/PackageManager/Server/UnityPackageManager server -s 30139 --ipc-path /tmp/Unity-Upm-30139.sock -l 2 --log-file /Users/elijahsaloma/Desktop/CC_CANOE_PROJECT/Logs/upm.log
+[2026-09-17T01:57:54.971Z][INFO] IPC server started (IPC path=/tmp/Unity-Upm-30139.sock).
+[2026-09-17T01:57:54.971Z][INFO] Hint: To connect to this UPM instance, launch Unity with the command-line parameter -upmIpcPath Upm-30139.
+[2026-09-17T01:57:55.933Z][INFO] project:list-packages <-- Request received
+params: {}
+[2026-09-17T01:57:56.010Z][INFO] project:list-packages --> 200 (77 ms)
+[2026-09-17T01:57:56.045Z][INFO] project:list-packages <-- Request received
+params: {}
+[2026-09-17T01:57:56.056Z][INFO] config:project:get-registries <-- Request received
+params: {}
+[2026-09-17T01:57:56.060Z][INFO] config:project:get-registries --> 200 (4 ms)
+[2026-09-17T01:57:56.076Z][INFO] project:list-packages --> 200 (31 ms)
+[2026-09-17T01:57:57.459Z][INFO] Received shutdown request (SIGTERM), shutting down Unity Package Manager
