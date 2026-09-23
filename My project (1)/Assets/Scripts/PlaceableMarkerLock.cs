@@ -27,11 +27,15 @@ public class PlaceableMarkerLock : MonoBehaviour
     public bool isSummoned = false;
 
     // how close in X/Y/Z the piece's center needs to get to marker before it snaps into place
-    public float lockThreshold = 0.5f;
+    public float lockThreshold = 0.25f;
 
     // the flat icon shown in the hotbar preview - assigned manually, independent
     // of whatever this piece actually looks like in 3D (sprite, mesh, primitive, etc.)
     public Sprite previewIcon;
+
+    [Header("Boundary")]
+    // if assigned, this piece can never be moved outside this box
+    public PlayAreaBounds playAreaBounds;
 
     private Renderer[] pieceRenderers;
     private Collider pieceCollider;
@@ -136,6 +140,11 @@ public class PlaceableMarkerLock : MonoBehaviour
         if (!isSelected || isLocked)
         {
             return;
+        }
+
+        if (playAreaBounds != null)
+        {
+            worldPoint = playAreaBounds.ClampPosition(worldPoint);
         }
 
         transform.position = worldPoint;
