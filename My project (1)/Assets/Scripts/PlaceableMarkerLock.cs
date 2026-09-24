@@ -27,7 +27,7 @@ public class PlaceableMarkerLock : MonoBehaviour
     public bool isSummoned = false;
 
     // how close in X/Y/Z the piece's center needs to get to marker before it snaps into place
-    public float lockThreshold = 0.25f;
+    public float lockThreshold = 10f;
 
     // the flat icon shown in the hotbar preview - assigned manually, independent
     // of whatever this piece actually looks like in 3D (sprite, mesh, primitive, etc.)
