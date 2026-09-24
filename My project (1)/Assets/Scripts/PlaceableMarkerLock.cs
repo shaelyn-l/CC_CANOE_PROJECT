@@ -187,7 +187,10 @@ public class PlaceableMarkerLock : MonoBehaviour
     {
         if (isLocked)
         {
-            SetAllRenderersColor(Color.cyan);
+            for (int i = 0; i < pieceRenderers.Length; i++)
+            {
+                pieceRenderers[i].material.color = originalColors[i];
+            }
         }
         else if (isSelected)
         {
