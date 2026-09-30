@@ -152,7 +152,7 @@ public class DPadFlyer : MonoBehaviour
     public float moveSpeed = 20;
 
     [Tooltip("Rotation speed.")]
-    public float rotateSpeed = 20;
+    public float rotateSpeed = 100;
 
     [Tooltip("Set to true if desire to flip pitch direction")]
     public bool flipPitch = false;
