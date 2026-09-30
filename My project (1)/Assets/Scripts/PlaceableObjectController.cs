@@ -39,6 +39,8 @@ public class PlaceableObjectController : MonoBehaviour
 
     void Update()
     {
+        if (!GameStartGate.HasStarted) return;
+
         UpdateHover();
         HandleSelectClick();
         HandleZAxisModeToggle();

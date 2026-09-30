@@ -131,6 +131,65 @@
 
 */
 
+/* DPAD navigation controller for VR.
+(C) 2022 - Jason Leigh, Laboratory for Advanced Visualization & Applications, University of Hawaii at Manoa
+    Version 09/17/2022 - added rotation speed variable
+    Version 08/13/2022 - updated to use Unityʻs new input manager.
+
+    Add this to the XRRig and give it the main camera.
+    Controls need to be appropriately configured in Project Settings Input Manager as follows:
+
+    Left Joystick left and right (for strafe left/right)
+    Left Joystick up and down (for forward/back)
+    Right Joystick up and down (pitch)
+    Right Joystick left and right(yaw)
+    LeftTrigger (roll left)
+    RightTrigger  (roll right)
+    Left Shoulder (move down)
+    Right Shoulder (move up)
+    AButton  (hold to reset navigtion to origin) 
+
+*/
+
+/* DPAD navigation controller for VR.
+(C) 2022 - Jason Leigh, Laboratory for Advanced Visualization & Applications, University of Hawaii at Manoa
+    Version 09/17/2022 - added rotation speed variable
+    Version 08/13/2022 - updated to use Unityʻs new input manager.
+
+    Add this to the XRRig and give it the main camera.
+    Controls need to be appropriately configured in Project Settings Input Manager as follows:
+
+    Left Joystick left and right (for strafe left/right)
+    Left Joystick up and down (for forward/back)
+    Right Joystick up and down (pitch)
+    Right Joystick left and right(yaw)
+    LeftTrigger (roll left)
+    RightTrigger  (roll right)
+    Left Shoulder (move down)
+    Right Shoulder (move up)
+    AButton  (hold to reset navigtion to origin) 
+
+*/
+/* DPAD navigation controller for VR.
+(C) 2022 - Jason Leigh, Laboratory for Advanced Visualization & Applications, University of Hawaii at Manoa
+    Version 09/17/2022 - added rotation speed variable
+    Version 08/13/2022 - updated to use Unityʻs new input manager.
+
+    Add this to the XRRig and give it the main camera.
+    Controls need to be appropriately configured in Project Settings Input Manager as follows:
+
+    Left Joystick left and right (for strafe left/right)
+    Left Joystick up and down (for forward/back)
+    Right Joystick up and down (pitch)
+    Right Joystick left and right(yaw)
+    LeftTrigger (roll left)
+    RightTrigger  (roll right)
+    Left Shoulder (move down)
+    Right Shoulder (move up)
+    AButton  (hold to reset navigtion to origin) 
+
+*/
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -152,7 +211,7 @@ public class DPadFlyer : MonoBehaviour
     public float moveSpeed = 20;
 
     [Tooltip("Rotation speed.")]
-    public float rotateSpeed = 100;
+    public float rotateSpeed = 20;
 
     [Tooltip("Set to true if desire to flip pitch direction")]
     public bool flipPitch = false;
@@ -172,6 +231,7 @@ public class DPadFlyer : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        if (!GameStartGate.HasStarted) return;
 
         Gamepad gamepad = Gamepad.current;
         if (gamepad == null) return;
