@@ -190,6 +190,46 @@
 
 */
 
+/* DPAD navigation controller for VR.
+(C) 2022 - Jason Leigh, Laboratory for Advanced Visualization & Applications, University of Hawaii at Manoa
+    Version 09/17/2022 - added rotation speed variable
+    Version 08/13/2022 - updated to use Unityʻs new input manager.
+
+    Add this to the XRRig and give it the main camera.
+    Controls need to be appropriately configured in Project Settings Input Manager as follows:
+
+    Left Joystick left and right (for strafe left/right)
+    Left Joystick up and down (for forward/back)
+    Right Joystick up and down (pitch)
+    Right Joystick left and right(yaw)
+    LeftTrigger (roll left)
+    RightTrigger  (roll right)
+    Left Shoulder (move down)
+    Right Shoulder (move up)
+    AButton  (hold to reset navigtion to origin) 
+
+*/
+
+/* DPAD navigation controller for VR.
+(C) 2022 - Jason Leigh, Laboratory for Advanced Visualization & Applications, University of Hawaii at Manoa
+    Version 09/17/2022 - added rotation speed variable
+    Version 08/13/2022 - updated to use Unityʻs new input manager.
+
+    Add this to the XRRig and give it the main camera.
+    Controls need to be appropriately configured in Project Settings Input Manager as follows:
+
+    Left Joystick left and right (for strafe left/right)
+    Left Joystick up and down (for forward/back)
+    Right Joystick up and down (pitch)
+    Right Joystick left and right(yaw)
+    LeftTrigger (roll left)
+    RightTrigger  (roll right)
+    Left Shoulder (move down)
+    Right Shoulder (move up)
+    AButton  (hold to reset navigtion to origin) 
+
+*/
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -275,15 +315,17 @@ public class DPadFlyer : MonoBehaviour
 
 
         }
-        if (gamepad.leftShoulder.isPressed){
-        //if (Input.GetKey(KeyCode.JoystickButton4)){
-            transform.Translate(new Vector3(0,-1,0) * moveSpeed/2 * Time.deltaTime,mainCam.transform);
-
-        }
-        if (gamepad.rightShoulder.isPressed){
-        //if (Input.GetKey(KeyCode.JoystickButton5)){
-            transform.Translate(new Vector3(0,1,0) * moveSpeed/2 * Time.deltaTime,mainCam.transform);
-        }
+        // Up/down movement on the shoulder buttons disabled - the bumpers
+        // now move the selected puzzle piece in Z instead, in
+        // PlaceableObjectController.
+        // if (gamepad.leftShoulder.isPressed){
+        // //if (Input.GetKey(KeyCode.JoystickButton4)){
+        //     transform.Translate(new Vector3(0,-1,0) * moveSpeed/2 * Time.deltaTime,mainCam.transform);
+        // }
+        // if (gamepad.rightShoulder.isPressed){
+        // //if (Input.GetKey(KeyCode.JoystickButton5)){
+        //     transform.Translate(new Vector3(0,1,0) * moveSpeed/2 * Time.deltaTime,mainCam.transform);
+        // }
 
         // clamp whatever position all the movement above ended up at, so
         // the player can never fly outside the playable box
@@ -291,5 +333,15 @@ public class DPadFlyer : MonoBehaviour
         {
             transform.position = playAreaBounds.ClampPosition(transform.position);
         }
+    }
+
+    // Instantly snaps to the origin - unlike the hold-to-reset above
+    // (which gradually Slerps while A is held), this is a one-shot jump,
+    // meant to be called directly by other scripts (e.g. once the puzzle
+    // is complete and the player presses A to see the final product).
+    public void ResetToOrigin()
+    {
+        transform.position = resetPosition;
+        transform.rotation = resetAngle;
     }
 }

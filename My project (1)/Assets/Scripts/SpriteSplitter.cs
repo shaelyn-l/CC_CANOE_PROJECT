@@ -1,0 +1,237 @@
+using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+
+/// <summary>Creates three movable vertical thirds, with wood around every cut.</summary>
+[DisallowMultipleComponent]
+[RequireComponent(typeof(SpriteRenderer), typeof(SpriteExtender))]
+public sealed class SpriteSplitter : MonoBehaviour
+{
+    [Tooltip("Split automatically when entering Play mode. Otherwise use the Inspector split button or call Split().")]
+    public bool splitOnStart;
+
+
+    [Min(0f)]
+    [Tooltip("Initial spacing between pieces in local units. Zero preserves the assembled image.")]
+    public float separation = 0.1f;
+
+
+    [SerializeField, HideInInspector] private Transform[] pieces;
+    [SerializeField, HideInInspector] private bool isSplit;
+    [SerializeField, HideInInspector] private bool originalRendererEnabled;
+    [SerializeField, HideInInspector] private bool originalExtenderEnabled;
+
+
+    /// <summary>Each piece has its own transform and SpriteExtender; left to right in local space.</summary>
+    public System.Collections.Generic.IReadOnlyList<Transform> Pieces => pieces;
+    public bool IsSplit => isSplit;
+
+
+    private void Start()
+    {
+        if (splitOnStart && !isSplit) Split();
+    }
+
+
+    [ContextMenu("Split Into Three Vertical Pieces")]
+    public void Split()
+    {
+        if (isSplit) return;
+        SpriteRenderer source = GetComponent<SpriteRenderer>();
+        SpriteExtender original = GetComponent<SpriteExtender>();
+        Sprite sprite = source.sprite;
+        if (sprite == null || source.drawMode != SpriteDrawMode.Simple || sprite.rect.width < 3f)
+        {
+            Debug.LogWarning("Assign a sprite at least three pixels wide and use Simple draw mode before splitting.", this);
+            return;
+        }
+        if (original.horizontalSlice != new Vector2(0f, 1f))
+        {
+            Debug.LogWarning("Split the original whole sprite, rather than an already sliced piece.", this);
+            return;
+        }
+
+
+#if UNITY_EDITOR
+        int undoGroup = BeginUndo("Split Sprite", source, original);
+#endif
+        originalRendererEnabled = source.enabled;
+        originalExtenderEnabled = original.enabled;
+        pieces = new Transform[3];
+        int width = Mathf.CeilToInt(sprite.rect.width);
+        string[] labels = { "Left", "Middle", "Right" };
+        for (int i = 0; i < 3; i++)
+        {
+            // Flip changes which image third belongs on the visual left.
+            int imageThird = source.flipX ? 2 - i : i;
+            int start = Mathf.RoundToInt(imageThird * width / 3f);
+            int end = Mathf.RoundToInt((imageThird + 1) * width / 3f);
+            float centerX = ((start + end) * 0.5f * sprite.rect.width / width - sprite.pivot.x) / sprite.pixelsPerUnit;
+            float centerY = (sprite.rect.height * 0.5f - sprite.pivot.y) / sprite.pixelsPerUnit;
+            Vector2 center = new Vector2(source.flipX ? -centerX : centerX, source.flipY ? -centerY : centerY);
+
+
+            GameObject piece = new GameObject(name + " - " + labels[i]);
+            piece.SetActive(false); // Configure before SpriteExtender's OnEnable builds its mesh.
+            piece.layer = gameObject.layer;
+            piece.transform.SetParent(transform, false);
+            piece.transform.localPosition = new Vector3(center.x + (i - 1) * Mathf.Max(0f, separation), center.y, 0f);
+            SpriteRenderer renderer = piece.AddComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.color = source.color;
+            renderer.flipX = source.flipX;
+            renderer.flipY = source.flipY;
+            renderer.sharedMaterial = source.sharedMaterial;
+            renderer.sortingLayerID = source.sortingLayerID;
+            renderer.sortingOrder = source.sortingOrder;
+            SpriteExtender extender = piece.AddComponent<SpriteExtender>();
+            extender.depth = original.depth;
+            extender.woodEdgeColor = original.woodEdgeColor;
+            extender.woodGrainStrength = original.woodGrainStrength;
+            extender.alphaCutoff = original.alphaCutoff;
+            extender.horizontalSlice = new Vector2(imageThird / 3f, (imageThird + 1) / 3f);
+            extender.geometryOffset = center;
+            pieces[i] = piece.transform;
+            piece.SetActive(true);
+
+            // The generated 3D mesh only exists once the piece is active
+            // (SpriteExtender builds it in OnEnable), so everything below
+            // that depends on it has to happen after SetActive(true).
+
+            // Auto-size a Box Collider to match the generated mesh, if
+            // it's there; otherwise fall back to a default-sized one.
+            BoxCollider collider = piece.AddComponent<BoxCollider>();
+            MeshFilter generatedMeshFilter = piece.GetComponentInChildren<MeshFilter>();
+            if (generatedMeshFilter != null && generatedMeshFilter.sharedMesh != null)
+            {
+                Bounds meshBounds = generatedMeshFilter.sharedMesh.bounds;
+                collider.center = meshBounds.center;
+                collider.size = meshBounds.size;
+            }
+
+            // Added after the Collider, and after the piece is active, so
+            // its own Awake() (which looks for both a Collider and every
+            // Renderer in its children, including the generated mesh)
+            // finds everything correctly.
+            PlaceableMarkerLock markerLock = piece.AddComponent<PlaceableMarkerLock>();
+            markerLock.previewIcon = CreateSlicedIcon(sprite, extender.horizontalSlice);
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying) Undo.RegisterCreatedObjectUndo(piece, "Create Sprite Piece");
+#endif
+        }
+        original.enabled = false;
+        source.enabled = false;
+        isSplit = true;
+#if UNITY_EDITOR
+        EndUndo(undoGroup);
+#endif
+    }
+
+
+    // Crops just the given horizontal slice out of the source sprite's
+    // texture, and wraps it as a new Sprite - used as the piece's
+    // Preview Icon, so the hotbar shows just that piece's own third of
+    // the image rather than the whole original picture.
+    //
+    // Reads pixels via a temporary RenderTexture (the same approach
+    // SpriteExtender uses for its alpha mask) so the source texture
+    // doesn't need "Read/Write Enabled" turned on.
+    private static Sprite CreateSlicedIcon(Sprite sprite, Vector2 horizontalSlice)
+    {
+        Texture2D texture = sprite.texture;
+
+        float rectX = sprite.rect.x;
+        float rectY = sprite.rect.y;
+        float rectWidth = sprite.rect.width;
+        float rectHeight = sprite.rect.height;
+
+        int sliceStartPx = Mathf.RoundToInt(rectX + horizontalSlice.x * rectWidth);
+        int sliceEndPx = Mathf.RoundToInt(rectX + horizontalSlice.y * rectWidth);
+        int sliceWidth = Mathf.Max(1, sliceEndPx - sliceStartPx);
+        int sliceHeight = Mathf.Max(1, Mathf.RoundToInt(rectHeight));
+        int startY = Mathf.RoundToInt(rectY);
+
+        RenderTexture previousActive = RenderTexture.active;
+        RenderTexture temporary = RenderTexture.GetTemporary(texture.width, texture.height, 0,
+            RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+
+        Texture2D sliceTexture;
+        try
+        {
+            Graphics.Blit(texture, temporary);
+            RenderTexture.active = temporary;
+
+            sliceTexture = new Texture2D(sliceWidth, sliceHeight, TextureFormat.RGBA32, false);
+            sliceTexture.ReadPixels(new Rect(sliceStartPx, startY, sliceWidth, sliceHeight), 0, 0);
+            sliceTexture.Apply();
+        }
+        finally
+        {
+            RenderTexture.active = previousActive;
+            RenderTexture.ReleaseTemporary(temporary);
+        }
+
+        return Sprite.Create(sliceTexture, new Rect(0, 0, sliceWidth, sliceHeight),
+            new Vector2(0.5f, 0.5f), sprite.pixelsPerUnit);
+    }
+
+
+    [ContextMenu("Restore Whole Sprite")]
+    public void Restore()
+    {
+        if (!isSplit) return;
+        SpriteRenderer source = GetComponent<SpriteRenderer>();
+        SpriteExtender original = GetComponent<SpriteExtender>();
+#if UNITY_EDITOR
+        int undoGroup = BeginUndo("Restore Whole Sprite", source, original);
+#endif
+        if (pieces != null)
+        {
+            foreach (Transform piece in pieces)
+            {
+                if (piece == null) continue;
+#if UNITY_EDITOR
+                if (!Application.isPlaying) { Undo.DestroyObjectImmediate(piece.gameObject); continue; }
+#endif
+                piece.gameObject.SetActive(false);
+                Destroy(piece.gameObject);
+            }
+        }
+        pieces = null;
+        isSplit = false;
+        source.enabled = originalRendererEnabled;
+        original.enabled = originalExtenderEnabled;
+#if UNITY_EDITOR
+        EndUndo(undoGroup);
+#endif
+    }
+
+
+#if UNITY_EDITOR
+    private int BeginUndo(string label, SpriteRenderer source, SpriteExtender extender)
+    {
+        if (Application.isPlaying) return -1;
+        Undo.IncrementCurrentGroup();
+        int group = Undo.GetCurrentGroup();
+        Undo.SetCurrentGroupName(label);
+        Undo.RecordObjects(new Object[] { this, source, extender }, label);
+        return group;
+    }
+
+
+    private void EndUndo(int group)
+    {
+        if (group < 0) return;
+        EditorUtility.SetDirty(this);
+        PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+        PrefabUtility.RecordPrefabInstancePropertyModifications(GetComponent<SpriteRenderer>());
+        PrefabUtility.RecordPrefabInstancePropertyModifications(GetComponent<SpriteExtender>());
+        if (gameObject.scene.IsValid())
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
+        Undo.CollapseUndoOperations(group);
+    }
+#endif
+}

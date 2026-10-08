@@ -27,7 +27,7 @@ public class PlaceableMarkerLock : MonoBehaviour
     public bool isSummoned = false;
 
     // how close in X/Y/Z the piece's center needs to get to marker before it snaps into place
-    public float lockThreshold = 10f;
+    public float lockThreshold = 0.25f;
 
     // the flat icon shown in the hotbar preview - assigned manually, independent
     // of whatever this piece actually looks like in 3D (sprite, mesh, primitive, etc.)
@@ -36,6 +36,10 @@ public class PlaceableMarkerLock : MonoBehaviour
     [Header("Boundary")]
     // if assigned, this piece can never be moved outside this box
     public PlayAreaBounds playAreaBounds;
+
+    [Header("Feedback Colors")]
+    public Color hoverColor = new Color(1f, 1f, 0.6f);
+    public Color selectedColor = new Color(0.6f, 1f, 0.6f);
 
     private Renderer[] pieceRenderers;
     private Collider pieceCollider;
@@ -50,11 +54,15 @@ public class PlaceableMarkerLock : MonoBehaviour
         pieceCollider = GetComponent<Collider>();
         pieceAudioSource = GetComponent<AudioSource>();
 
-        // remember each renderer's own starting color individually
+        // remember each renderer's own starting color individually. For a
+        // SpriteRenderer, read .color specifically rather than
+        // .material.color - this matters for pieces using SpriteExtender,
+        // which drives its own shader's tint from .color every frame and
+        // would otherwise ignore (and overwrite) anything set on .material
         originalColors = new Color[pieceRenderers.Length];
         for (int i = 0; i < pieceRenderers.Length; i++)
         {
-            originalColors[i] = pieceRenderers[i].material.color;
+            originalColors[i] = GetOriginalColor(pieceRenderers[i]);
         }
 
         if (startHidden)
@@ -187,26 +195,28 @@ public class PlaceableMarkerLock : MonoBehaviour
     {
         if (isLocked)
         {
-            for (int i = 0; i < pieceRenderers.Length; i++)
-            {
-                pieceRenderers[i].material.color = originalColors[i];
-            }
+            RestoreOriginalColors();
         }
         else if (isSelected)
         {
-            SetAllRenderersColor(Color.green);
+            SetAllRenderersColor(selectedColor);
         }
         else if (isHovered)
         {
-            SetAllRenderersColor(Color.yellow);
+            SetAllRenderersColor(hoverColor);
         }
         else
         {
-            // restore each renderer to its own original color individually
-            for (int i = 0; i < pieceRenderers.Length; i++)
-            {
-                pieceRenderers[i].material.color = originalColors[i];
-            }
+            RestoreOriginalColors();
+        }
+    }
+
+    private void RestoreOriginalColors()
+    {
+        // restore each renderer to its own original color individually
+        for (int i = 0; i < pieceRenderers.Length; i++)
+        {
+            ApplyColor(pieceRenderers[i], originalColors[i]);
         }
     }
 
@@ -214,8 +224,52 @@ public class PlaceableMarkerLock : MonoBehaviour
     {
         for (int i = 0; i < pieceRenderers.Length; i++)
         {
-            pieceRenderers[i].material.color = color;
+            ApplyColor(pieceRenderers[i], color);
         }
+    }
+
+    private void ApplyColor(Renderer targetRenderer, Color color)
+    {
+        // SpriteExtender reads .color off the SpriteRenderer every frame to
+        // drive its own shader's tint, and ignores .material entirely - so
+        // for a SpriteRenderer, .color has to be set directly for the
+        // color feedback to actually show up (this also works fine for a
+        // plain SpriteRenderer with no SpriteExtender at all)
+        SpriteRenderer spriteRenderer = targetRenderer as SpriteRenderer;
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = color;
+            return;
+        }
+
+        // Some custom shaders (like the one SpriteExtender's generated
+        // mesh uses) don't expose a standard _Color property at all -
+        // skip those rather than error trying to read/write a property
+        // that doesn't exist on that shader.
+        if (targetRenderer.material.HasProperty("_Color"))
+        {
+            targetRenderer.material.color = color;
+        }
+    }
+
+    private Color GetOriginalColor(Renderer sourceRenderer)
+    {
+        SpriteRenderer spriteRenderer = sourceRenderer as SpriteRenderer;
+        if (spriteRenderer != null)
+        {
+            return spriteRenderer.color;
+        }
+
+        if (sourceRenderer.material.HasProperty("_Color"))
+        {
+            return sourceRenderer.material.color;
+        }
+
+        // no usable color to read for this renderer's shader - the value
+        // stored here will never actually be written back anywhere
+        // (ApplyColor skips the same renderers for the same reason), so
+        // this is just a harmless placeholder
+        return Color.white;
     }
 
     private void PlaySound(AudioClip clip)

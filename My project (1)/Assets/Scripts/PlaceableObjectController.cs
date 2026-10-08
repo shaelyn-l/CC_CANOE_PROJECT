@@ -1,8 +1,11 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
+using TMPro;
 
+[RequireComponent(typeof(AudioSource))]
 public class PlaceableObjectController : MonoBehaviour
 {
     // whose transform position define the crosshair ray
@@ -10,7 +13,7 @@ public class PlaceableObjectController : MonoBehaviour
     public Transform headTransform;
 
     // max raycast distance for selecting
-    private float maxRaycastDistance = 150f;
+    private float maxRaycastDistance = 250f;
 
     // layers considered when raycasting to select an object
     public LayerMask placeableLayers;    
@@ -28,27 +31,138 @@ public class PlaceableObjectController : MonoBehaviour
     // how many world units per second a piece moves at full input
     public float moveSpeed = 0.5f;
 
+    // sound played whenever the left or right trigger cycles the hotbar
+    public AudioClip cycleSound;
+
+    [Header("Puzzle / Reference Toggle")]
+    // the puzzle the player actively moves pieces around to complete
+    public GameObject activePuzzle;
+    // the completed puzzle the player can reference, shown in its place
+    public GameObject referencePuzzle;
+
+    // true while the reference puzzle is the one currently showing
+    bool showingReference = false;
+
+    // true while a toggle is already in progress, so a second press
+    // can't interrupt it partway through
+    bool isTransitioning = false;
+
+    [Header("Transition Message")]
+    // shown briefly while switching between the active and reference puzzle
+    public TextMeshPro transitionText;
+    public string transitionMessage = "One moment \u2014 bringing up the reference puzzle...";
+
+    [Header("Puzzle Completion")]
+    // played once, the moment every piece in Hotbar Pieces reports isLocked
+    public AudioClip completionSound;
+    // shown once the puzzle is complete, until the player presses A
+    public TextMeshPro completionText;
+    public string completionMessage = "Congratulations, you've put all the pieces into place.\nNow press A to see the final product.";
+    // the player flies back to this object's reset position/rotation once
+    // the final A is pressed (this is DPadFlyer, which already stores
+    // CC_HUB's starting position/rotation as its own reset point)
+    public DPadFlyer playerFlyer;
+    // placeholder objects (fog, flowers, clouds, etc.) revealed once the
+    // final A is pressed - just made active for now, no animation yet
+    public GameObject[] revealObjects;
+
+    // true once the completion sound/text have already fired, so this
+    // never triggers a second time
+    bool puzzleComplete = false;
+    // true from the moment the puzzle completes until the player presses
+    // A to dismiss the message and see the final product
+    bool awaitingFinalPress = false;
+
     int hotbarIndex = 0;
 
     PlaceableMarkerLock hovered;
     PlaceableMarkerLock selected;
 
-    // true while X is toggled on - triggers control Z movement instead of
-    // cycling the hotbar
-    bool zAxisMode = false;
+    AudioSource audioSource;
+
+    void Awake()
+    {
+        audioSource = GetComponent<AudioSource>();
+    }
 
     void Update()
     {
         if (!GameStartGate.HasStarted) return;
 
+        CheckPuzzleCompletion();
+        HandleFinalPress();
+
         UpdateHover();
         HandleSelectClick();
-        HandleZAxisModeToggle();
+        HandleActiveReferenceToggle();
         HandleHotbarInput();
 
         if (selected != null)
         {
             MoveSelected();
+        }
+    }
+
+    // once every piece in hotbarPieces reports isLocked, play the
+    // completion sound and show the message - only ever fires once
+    void CheckPuzzleCompletion()
+    {
+        if (puzzleComplete) return;
+
+        for (int i = 0; i < hotbarPieces.Count; i++)
+        {
+            if (!hotbarPieces[i].isLocked)
+            {
+                return;
+            }
+        }
+
+        // every piece is locked
+        puzzleComplete = true;
+        awaitingFinalPress = true;
+
+        if (completionSound != null)
+        {
+            audioSource.PlayOneShot(completionSound);
+        }
+
+        if (completionText != null)
+        {
+            completionText.text = completionMessage;
+            completionText.gameObject.SetActive(true);
+        }
+    }
+
+    // waits for a single press of A once the puzzle is complete, then
+    // hides the message, sends the player back to the origin, and
+    // reveals the placeholder objects for the (not yet implemented)
+    // animation
+    void HandleFinalPress()
+    {
+        if (!awaitingFinalPress) return;
+
+        Gamepad gamepad = Gamepad.current;
+        if (gamepad.buttonSouth.wasPressedThisFrame)
+        {
+            awaitingFinalPress = false;
+
+            if (completionText != null)
+            {
+                completionText.gameObject.SetActive(false);
+            }
+
+            if (playerFlyer != null)
+            {
+                playerFlyer.ResetToOrigin();
+            }
+
+            for (int i = 0; i < revealObjects.Length; i++)
+            {
+                if (revealObjects[i] != null)
+                {
+                    revealObjects[i].SetActive(true);
+                }
+            }
         }
     }
 
@@ -124,15 +238,55 @@ public class PlaceableObjectController : MonoBehaviour
         
     }
 
-    // West/X toggles whether the triggers cycle the hotbar or move the
-    // selected piece along Z instead
-    void HandleZAxisModeToggle()
+    // West/X toggles between the active puzzle (which the player
+    // interacts with) and the reference puzzle (the completed version
+    // the player can look at)
+    void HandleActiveReferenceToggle()
     {
         Gamepad gamepad = Gamepad.current;
-        if (gamepad.buttonWest.wasPressedThisFrame)
+        if (gamepad.buttonWest.wasPressedThisFrame && !isTransitioning)
         {
-            zAxisMode = !zAxisMode;
+            StartCoroutine(ToggleActiveReferenceRoutine());
         }
+    }
+
+    IEnumerator ToggleActiveReferenceRoutine()
+    {
+        isTransitioning = true;
+
+        // show the message, then wait exactly one frame so Unity actually
+        // draws and presents it to the screen BEFORE the potentially slow
+        // switch below runs - without this wait, the message would be set
+        // and then immediately overwritten by the freeze, never actually
+        // becoming visible
+        if (transitionText != null)
+        {
+            transitionText.text = transitionMessage;
+            transitionText.gameObject.SetActive(true);
+        }
+
+        yield return null;
+
+        showingReference = !showingReference;
+
+        // if we're switching TO the reference view while carrying a
+        // piece, drop it first - otherwise it would stay selected
+        // while invisible and frozen behind the deactivated active puzzle
+        if (showingReference && selected != null)
+        {
+            selected.Deselect();
+            selected = null;
+        }
+
+        activePuzzle.SetActive(!showingReference);
+        referencePuzzle.SetActive(showingReference);
+
+        if (transitionText != null)
+        {
+            transitionText.gameObject.SetActive(false);
+        }
+
+        isTransitioning = false;
     }
 
     void MoveSelected()
@@ -145,13 +299,9 @@ public class PlaceableObjectController : MonoBehaviour
         if (gamepad.dpad.left.isPressed) direction.x -= 0.5f;
         if (gamepad.dpad.right.isPressed) direction.x += 0.5f;
 
-        // triggers only move the piece in Z while zAxisMode is active -
-        // otherwise they're busy cycling the hotbar instead
-        if (zAxisMode)
-        {
-            if (gamepad.rightTrigger.isPressed) direction.z -= 0.5f; // back
-            if (gamepad.leftTrigger.isPressed) direction.z += 0.5f;  // forward
-        }
+        // bumpers move the selected piece in Z
+        if (gamepad.rightShoulder.isPressed) direction.z -= 0.5f; // back
+        if (gamepad.leftShoulder.isPressed) direction.z += 0.5f;  // forward
 
         Vector3 delta = direction * moveSpeed * Time.deltaTime;
         // current position + changed x, y, and z positions
@@ -194,13 +344,8 @@ public class PlaceableObjectController : MonoBehaviour
 
         Gamepad gamepad = Gamepad.current;
 
-        // while zAxisMode is active, the triggers are busy moving the
-        // selected piece in Z instead of cycling the hotbar
-        if (!zAxisMode)
-        {
-            if (gamepad.leftTrigger.wasPressedThisFrame) cycleLeft = true;
-            if (gamepad.rightTrigger.wasPressedThisFrame) cycleRight = true;
-        }
+        if (gamepad.leftTrigger.wasPressedThisFrame) cycleLeft = true;
+        if (gamepad.rightTrigger.wasPressedThisFrame) cycleRight = true;
 
         if (gamepad.buttonNorth.wasPressedThisFrame) summonPressed = true;
 
@@ -215,10 +360,12 @@ public class PlaceableObjectController : MonoBehaviour
         if (cycleLeft == true)
         {
             hotbarIndex = (hotbarIndex - 1 + pending.Count) % pending.Count;
+            PlayCycleSound();
         }
         if (cycleRight == true)
         {
             hotbarIndex = (hotbarIndex + 1) % pending.Count;
+            PlayCycleSound();
         }
 
         if (summonPressed && selected == null)
@@ -234,6 +381,18 @@ public class PlaceableObjectController : MonoBehaviour
             hotbarIndex = 0;
         }
         UpdateHotbarPreview();
+    }
+
+    void PlayCycleSound()
+    {
+        if (cycleSound == null)
+        {
+            return;
+        }
+
+        // PlayOneShot lets overlapping cycle presses layer naturally
+        // instead of cutting each other off
+        audioSource.PlayOneShot(cycleSound);
     }
 
     void UpdateHotbarPreview()
