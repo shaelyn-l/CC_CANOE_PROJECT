@@ -16,13 +16,13 @@ public class PlaceableObjectController : MonoBehaviour
     private float maxRaycastDistance = 250f;
 
     // layers considered when raycasting to select an object
-    public LayerMask placeableLayers;    
+    public LayerMask placeableLayers;
 
     [Header("Hotbar")]
-    // puzzle pieces to summon via hotbar
+    // puzzle pieces to summon via hotbar, in the order they come up
     public List<PlaceableMarkerLock> hotbarPieces = new List<PlaceableMarkerLock>();
 
-    // sprite renderer that shows the sprite of the piece currently selected in the hotbar
+    // sprite renderer that shows the sprite of the next piece to be summoned
     public SpriteRenderer hotbarPreviewRenderer;
 
     // how far in front of the player a summoned piece spawns
@@ -30,9 +30,6 @@ public class PlaceableObjectController : MonoBehaviour
 
     // how many world units per second a piece moves at full input
     public float moveSpeed = 0.5f;
-
-    // sound played whenever the left or right trigger cycles the hotbar
-    public AudioClip cycleSound;
 
     [Header("Puzzle / Reference Toggle")]
     // the puzzle the player actively moves pieces around to complete
@@ -72,8 +69,6 @@ public class PlaceableObjectController : MonoBehaviour
     // true from the moment the puzzle completes until the player presses
     // A to dismiss the message and see the final product
     bool awaitingFinalPress = false;
-
-    int hotbarIndex = 0;
 
     PlaceableMarkerLock hovered;
     PlaceableMarkerLock selected;
@@ -195,7 +190,7 @@ public class PlaceableObjectController : MonoBehaviour
             bool somethingHoveredBefore = hovered != null;
             bool somethingHoveredNow = newHover != null;
 
-             // was looking and one piece but now looking at another piece
+            // was looking and one piece but now looking at another piece
             if (somethingHoveredBefore && somethingHoveredNow)
             {
                 hovered.SetHovered(false);
@@ -235,7 +230,6 @@ public class PlaceableObjectController : MonoBehaviour
                 selected.Select();
             }
         }
-        
     }
 
     // West/X toggles between the active puzzle (which the player
@@ -307,7 +301,7 @@ public class PlaceableObjectController : MonoBehaviour
         // current position + changed x, y, and z positions
         Vector3 target = selected.transform.position + delta;
         selected.MoveTo(target);
- 
+
         // if the move caused it to lock, release reference
         if (selected.isLocked) selected = null;
     }
@@ -333,66 +327,29 @@ public class PlaceableObjectController : MonoBehaviour
         return pending;
     }
 
+    // The hotbar no longer cycles. The preview always shows the next
+    // piece that hasn't been summoned yet, and pressing Y pulls that
+    // piece up.
     void HandleHotbarInput()
     {
         List<PlaceableMarkerLock> pending = PendingPieces();
         if (pending.Count == 0) return;
 
-        bool cycleLeft = false;
-        bool cycleRight = false;
-        bool summonPressed = false;
-
         Gamepad gamepad = Gamepad.current;
 
-        if (gamepad.leftTrigger.wasPressedThisFrame) cycleLeft = true;
-        if (gamepad.rightTrigger.wasPressedThisFrame) cycleRight = true;
-
-        if (gamepad.buttonNorth.wasPressedThisFrame) summonPressed = true;
-
-        // Keyboard kb = Keyboard.current;
-        // if (kb != null)
-        // {
-        //     if (kb.leftBracketKey.wasPressedThisFrame) cycleLeft = true;
-        //     if (kb.rightBracketKey.wasPressedThisFrame) cycleRight = true;
-        //     if (kb.spaceKey.wasPressedThisFrame) summonPressed = true;
-        // }
-
-        if (cycleLeft == true)
+        if (gamepad.buttonNorth.wasPressedThisFrame && selected == null)
         {
-            hotbarIndex = (hotbarIndex - 1 + pending.Count) % pending.Count;
-            PlayCycleSound();
-        }
-        if (cycleRight == true)
-        {
-            hotbarIndex = (hotbarIndex + 1) % pending.Count;
-            PlayCycleSound();
-        }
+            PlaceableMarkerLock piece = pending[0];
 
-        if (summonPressed && selected == null)
-        {
-            PlaceableMarkerLock piece = pending[hotbarIndex];
-
-            // compute spawn point of object - now used directly in all
+            // compute spawn point of object - used directly in all
             // three axes, no depth override
             Vector3 spawnPoint = headTransform.position + headTransform.forward * spawnDistance;
 
             piece.Summon(spawnPoint);
             selected = piece;
-            hotbarIndex = 0;
         }
+
         UpdateHotbarPreview();
-    }
-
-    void PlayCycleSound()
-    {
-        if (cycleSound == null)
-        {
-            return;
-        }
-
-        // PlayOneShot lets overlapping cycle presses layer naturally
-        // instead of cutting each other off
-        audioSource.PlayOneShot(cycleSound);
     }
 
     void UpdateHotbarPreview()
@@ -406,6 +363,6 @@ public class PlaceableObjectController : MonoBehaviour
         }
 
         hotbarPreviewRenderer.enabled = true;
-        hotbarPreviewRenderer.sprite = pending[hotbarIndex].previewIcon;
+        hotbarPreviewRenderer.sprite = pending[0].previewIcon;
     }
 }
