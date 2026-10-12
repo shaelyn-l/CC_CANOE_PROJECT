@@ -149,8 +149,8 @@ public class BirdFlock : MonoBehaviour
             {
                 avgVel /= neighbors;
                 avgPos /= neighbors;
-                accel += (avgVel - velocities[i]) * alignmentWeight;
-                accel += (avgPos - pos) * cohesionWeight;
+                accel += (avgVel - velocities[i]) * alignmentWeight; // allignment
+                accel += (avgPos - pos) * cohesionWeight; // cohesion
             }
 
             accel += (target - pos).normalized * targetWeight * maxSpeed;
